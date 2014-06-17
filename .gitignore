@@ -1,4 +1,1 @@
-app.js
-node_modules/
-client/app.js
-client/third_party/peer.js
+node_modules
