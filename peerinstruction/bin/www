@@ -1,0 +1,9 @@
+#!/usr/bin/env node
+
+var app = require("../app")
+var application = new app()
+
+application.autobahn_connection.open()
+var server = application.app.listen(9001, function() {
+    console.log("Server listening on http://localhost:9001/")
+})
