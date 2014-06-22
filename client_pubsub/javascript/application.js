@@ -290,6 +290,7 @@ connection.onopen = function(session) {
             session.publish("api:countdown_to_end_split_mode", [],
                             {countdown: timeout})
 
+            // TODO: consider timeouting 1 second earlier, because of WAMP delays
             run_countdown("#countdown_container", "#split_countdown", timeout,
                           function() {
                 session.call("api:end_split_mode").then(
