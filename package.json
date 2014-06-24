@@ -1,0 +1,31 @@
+{
+  "name": "pitt",
+  "version": "0.3.0",
+  "contributors": [
+    {
+      "name": "Piotr Banaszkiewicz",
+      "email": "piotr@banaszkiewicz.org"
+    },
+    {
+      "name": "David Rio Deiros",
+      "email": "driodeiros@gmail.com"
+    },
+    {
+      "name": "Matthew Schranz",
+      "email": "schranz.m@gmail.com"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/pbanaszkiewicz/pitt.git"
+  },
+  "dependencies": {
+    "autobahn": "0.9.3",
+    "express": "4.4.4",
+    "peer": "0.2.5"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=0.10"
+  }
+}
