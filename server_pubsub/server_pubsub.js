@@ -95,6 +95,7 @@ connection.onopen = function(session) {
 
         // put students into rooms
         rooms = {}
+        students_rooms = {}
         students_count = students.length
         var j = 0
         for (var i = 0; i < students_count; i += students_per_room) {
@@ -132,6 +133,7 @@ connection.onopen = function(session) {
 
         mode = BROADCAST_MODE
         rooms = {}
+        students_rooms = {}
 
         // announce end of split mode to every peer (including instructors)
         session.publish("api:split_mode_disabled")
