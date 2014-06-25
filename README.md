@@ -44,7 +44,7 @@ from your distribution's repository).
 Finally, install required dependencies:
 
 ```
-npm install express peer autobahn
+npm install
 ```
 
 ## Documentation
