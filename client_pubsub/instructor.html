@@ -15,12 +15,16 @@
 
     <div class="control_panel">
         <p>
+            Split size: <input type="number" name="split_size" id="split_size" min="2" max="6" value="2" style="width: 40px">
             <button id="start_split_mode">Split students into smaller groups</button>
             <button id="end_split_mode" disabled="disabled">Back to broadcast mode</button>
         </p>
         <p>
             <button id="start_broadcasting">Start broadcasting</button>
             <button id="stop_broadcasting" disabled="disabled">Stop broadcasting</button>
+        </p>
+        <p id="countdown_container" style="display: none">
+            The split mode ends in <span id="split_countdown"></span>.
         </p>
     </div>
     <hr>

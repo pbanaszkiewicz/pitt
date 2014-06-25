@@ -56,6 +56,27 @@ function add_video_to_element(element, video_id, video_class, video_src, video_m
     $(element).append(video)
 }
 
+// Run countdown (15, 14, 13... 1, 0) in a specific element.  This is used to
+// let students know that they have short time to finish discussions.
+//
+// main_el: element containing countdown message
+// time_el: element within main_el that contains number of seconds left
+// time: number of seconds to start with
+// callback: function to call when `time` hits 0
+function run_countdown(main_el, time_el, time, callback) {
+    // TODO: check if it's better to coordinate timeout from instructors'
+    //       browser, for example: send timeout=15, timeout=14... every second
+    console.log("Countdown to end split mode: ", time)
+    if (time > 0) {
+        $(main_el).show()
+        $(time_el).text(time)
+        window.setTimeout(run_countdown, 1000, main_el, time_el, time - 1, callback)
+    } else {
+        $(main_el).hide()
+        callback()
+    }
+}
+
 ////// PEERJS
 
 peer.on("open", function(id) {
@@ -196,6 +217,11 @@ function on_split_mode_enabled(args, kwargs, details) {
         }
     )
 }
+function on_countdown_to_end_split_mode(args, kwargs, details) {
+    timeout = kwargs["countdown"]
+    console.log("Event: countdown to end split mode started:", timeout)
+    run_countdown("#countdown_container", "#split_countdown", timeout, function() {})
+}
 function on_split_mode_disabled(args, kwargs, details) {
     console.log("Split mode disabled by some instructor")
     room_peers = Array()
@@ -245,7 +271,8 @@ connection.onopen = function(session) {
         })
 
         $("#start_split_mode").click(function() {
-            session.call("api:init_split_mode").then(
+            size = $("#split_size").val()
+            session.call("api:init_split_mode", [], {size: size}).then(
                 function(mode_n) {
                     console.log("Split mode has been enabled")
                     mode = mode_n
@@ -259,17 +286,28 @@ connection.onopen = function(session) {
         })
 
         $("#end_split_mode").click(function() {
-            session.call("api:end_split_mode").then(
-                function(mode_n) {
-                    console.log("Split mode has been disabled")
-                    mode = mode_n
-                    mode_change(mode)
-                },
-                // in case of error
-                function(error) {
-                    console.log("Split mode wasn't disabled :(", error.error)
-                }
-            )
+            // first call students to start timeouts
+            timeout = 15
+            session.publish("api:countdown_to_end_split_mode", [],
+                            {countdown: timeout})
+
+            $("#end_split_mode").attr("disabled", true)
+
+            // TODO: consider timeouting 1 second earlier, because of WAMP delays
+            run_countdown("#countdown_container", "#split_countdown", timeout,
+                          function() {
+                session.call("api:end_split_mode").then(
+                    function(mode_n) {
+                        console.log("Split mode has been disabled")
+                        mode = mode_n
+                        mode_change(mode)
+                    },
+                    // in case of error
+                    function(error) {
+                        console.log("Split mode wasn't disabled :(", error.error)
+                    }
+                )
+            })
         })
 
         $("#start_broadcasting").click(function() {
@@ -334,6 +372,8 @@ connection.onopen = function(session) {
         })
 
         session.subscribe("api:split_mode_enabled", on_split_mode_enabled)
+        session.subscribe("api:countdown_to_end_split_mode",
+                          on_countdown_to_end_split_mode)
         session.subscribe("api:split_mode_disabled", on_split_mode_disabled)
     }
 
