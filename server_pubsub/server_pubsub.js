@@ -146,7 +146,7 @@ connection.onopen = function(session) {
         console.log("Event: some student wants to know their room")
 
         user_id = kwargs["user_id"]
-        result = students_rooms[user_id]
+        result = rooms[ students_rooms[user_id] ]
         if (result) return result
         else return false;
 
