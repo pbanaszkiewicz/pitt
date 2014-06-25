@@ -271,7 +271,8 @@ connection.onopen = function(session) {
         })
 
         $("#start_split_mode").click(function() {
-            session.call("api:init_split_mode").then(
+            size = $("#split_size").val()
+            session.call("api:init_split_mode", [], {size: size}).then(
                 function(mode_n) {
                     console.log("Split mode has been enabled")
                     mode = mode_n
@@ -289,6 +290,8 @@ connection.onopen = function(session) {
             timeout = 15
             session.publish("api:countdown_to_end_split_mode", [],
                             {countdown: timeout})
+
+            $("#end_split_mode").attr("disabled", true)
 
             // TODO: consider timeouting 1 second earlier, because of WAMP delays
             run_countdown("#countdown_container", "#split_countdown", timeout,

@@ -78,7 +78,8 @@ connection.onopen = function(session) {
     // first step to split students into smaller groups is to initialize
     // split-mode - via this RPC command
     session.register("api:init_split_mode", function(args, kwargs, details) {
-        console.log("Event: some instructor initialized split mode")
+        console.log("Event: some instructor initialized split mode with the size of",
+                    kwargs["size"])
         if (mode == GROUP_MODE)
             throw new autobahn.Error("api:mode_change_error")
 
@@ -86,15 +87,22 @@ connection.onopen = function(session) {
 
         // in worst case (odd number of students) there's one student without
         // peers
-        var students_per_room = 2
+        var students_per_room = kwargs["size"] || 2
 
-        // put every two students into one room
+        // put students into rooms
         rooms = {}
         students_count = students.length
         var j = 0
         for (var i = 0; i < students_count; i += students_per_room) {
             rooms["room" + j] = students.slice(i, i + students_per_room)
             j++
+        }
+
+        // if in the last room there's only one student, move them to the
+        // precedent room
+        if (rooms["room" + (j - 1)].length == 1) {
+            lone_student = rooms["room" + (j - 1)].pop()
+            rooms["room" + (j - 2)].push(lone_student)
         }
 
         // announce split mode to every peer (including instructors)
