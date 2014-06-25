@@ -17,7 +17,11 @@ var connection = new autobahn.Connection({
 
 var students = Array()
 var instructors = Array()
-var rooms = {}
+var rooms = {}  // rooms contain arrays of students
+var students_rooms = {}  // student->room relation
+// for example, when rooms["room1"] = Array("student1", "student2")
+// then students_rooms["student1"] = "room1" and
+// students_rooms["student2"] = "room1"
 
 var BROADCAST_MODE = 2
 var GROUP_MODE = 3
@@ -95,6 +99,13 @@ connection.onopen = function(session) {
         var j = 0
         for (var i = 0; i < students_count; i += students_per_room) {
             rooms["room" + j] = students.slice(i, i + students_per_room)
+
+            // save student and corresponding room in students_rooms
+            for (var k = i; k < i + students_per_room; k++) {
+                student = students[k]
+                students_rooms[student] = "room" + j
+            }
+
             j++
         }
 
@@ -103,6 +114,7 @@ connection.onopen = function(session) {
         if (rooms["room" + (j - 1)].length == 1) {
             lone_student = rooms["room" + (j - 1)].pop()
             rooms["room" + (j - 2)].push(lone_student)
+            students_rooms[lone_student] = "room" + (j - 2)
         }
 
         // announce split mode to every peer (including instructors)
@@ -132,15 +144,18 @@ connection.onopen = function(session) {
         console.log("Event: some student wants to know their room")
 
         user_id = kwargs["user_id"]
-        room_names = Object.keys(rooms)
+        result = students_rooms[user_id]
+        if (result) return result
+        else return false;
 
-        for (var i = 0; i < room_names.length; i++) {
-            room = room_names[i]
-            if (rooms[room].indexOf(user_id) != -1) {
-                return rooms[room]
-            }
-        }
-        return false
+        // room_names = Object.keys(rooms)
+        // for (var i = 0; i < room_names.length; i++) {
+        //     room = room_names[i]
+        //     if (rooms[room].indexOf(user_id) != -1) {
+        //         return rooms[room]
+        //     }
+        // }
+        // return false
     })
 }
 
