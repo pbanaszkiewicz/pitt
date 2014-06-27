@@ -11,6 +11,7 @@ var user_id = ""
 var mode = 0
 var peer = new Peer({host: "localhost", port: 9000, debug: DEBUG})
 var local_stream = undefined  // mediaStream from navigator.getUserMedia
+var connection = undefined  // WAMP connection
 var calls_in_room = {}  // for storing P2P calls
 
 // simple hack to support as many browsers as possible
@@ -46,14 +47,14 @@ function mode_change(mode_n) {
     $("#start_broadcasting").attr("disabled", !value)
 }
 
-function add_video_to_element(element, video_id, video_class, video_src, video_muted) {
+function add_video_to_element(el, video_id, video_class, video_src, video_muted) {
     var video = $("<video>")
     video.prop("autoplay", true)
     video.prop("id", video_id)
     video.prop("class", video_class)
     video.prop("src", video_src)
     video.prop("muted", video_muted)
-    $(element).append(video)
+    $(el).append(video)
 }
 
 // Run countdown (15, 14, 13... 1, 0) in a specific element.  This is used to
@@ -135,13 +136,16 @@ peer.on("call", function(call) {
                 calls_in_room[call.peer] = undefined
                 $("#" + call.peer).remove()
             })
+        } else {
+            // we can't really reject a connection...
+            return false
         }
     }
 })
 
 ////// EVENTS
 
-var connection = new autobahn.Connection({
+connection = new autobahn.Connection({
     url: "ws://localhost:8080/ws",
     realm: "peerinstruction"
 })
@@ -181,6 +185,8 @@ function on_split_mode_enabled(args, kwargs, details) {
     // students are split into smaller groups, now every student needs to know
     // their peers
     console.log("Split mode enabled by some instructor")
+
+    $("#remote_streams").empty()  // we don't want any leftover streams to show
 
     connection.session.call("api:get_room_information", [],
                             {user_id: user_id}).then(
@@ -261,6 +267,8 @@ connection.onopen = function(session) {
     // `api:method`
     session.prefix("api", "com.peerinstruction")
 
+    // MODE_TYPE is set within instructor's or student's template
+
     if (MODE_TYPE == INSTRUCTOR) {
         // upon arrival, every new instructor should announce themself
         session.publish("api:new_instructor", [], {user_id: user_id})
@@ -287,7 +295,7 @@ connection.onopen = function(session) {
 
         $("#end_split_mode").click(function() {
             // first call students to start timeouts
-            timeout = 15
+            timeout = 30  // 15 is too little for some to notice
             session.publish("api:countdown_to_end_split_mode", [],
                             {countdown: timeout})
 
