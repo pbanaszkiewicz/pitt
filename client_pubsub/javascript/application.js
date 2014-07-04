@@ -9,7 +9,16 @@ var instructors = Array()
 var room_peers = Array()
 var user_id = ""
 var mode = 0
-var peer = new Peer({host: "localhost", port: 9000, debug: DEBUG})
+var peer = new Peer({
+    host: "localhost",
+    port: 9000,
+    debug: DEBUG,
+    config: {
+        'iceServers': [
+            {url: 'stun:stun.l.google.com:19302'}
+        ]
+    }
+})
 var local_stream = undefined  // mediaStream from navigator.getUserMedia
 var connection = undefined  // WAMP connection
 var calls_in_room = {}  // for storing P2P calls
