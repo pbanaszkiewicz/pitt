@@ -1,10 +1,13 @@
 .sidebar {
     border-right: 1px solid #EEEEEE;
 }
+.chat {
+    border-left: 1px solid #EEEEEE;
+}
 
-.local-stream   {border: 2px solid green;}
-.remote-stream  {border: 2px solid red;}
-.teacher-stream {border: 2px solid red;}
+.local-stream   {border: 3px solid green;}
+.remote-stream  {border: 3px solid red;}
+.teacher-stream {border: 3px solid red;}
 
 .original-size {width: 640px; height: 480px;}
 .medium-size   {width: 320px; height: 240px;}

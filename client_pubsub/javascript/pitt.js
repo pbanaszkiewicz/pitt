@@ -4,10 +4,12 @@ PITT.Pitt = function(is_instructor) {
     var INTERFACE = {}
     var user_id
     var instructor = is_instructor
+    var user_media
     var state = STATE.NOTHING  // from `globals.js`
 
-    var students = new Array()  // list of students
-    var instructors = new Array()  // list of instructors
+    var students = []  // list of students
+    var instructors = []  // list of instructors
+    var active_calls = {}  // list of peers that we have active call with
 
     // can't create peer object here, because it automatically tries to connect
     // to the PeerServer.  Thus, `Pitt.init()`.
@@ -56,6 +58,14 @@ PITT.Pitt = function(is_instructor) {
                 state = result.state
                 updateStudents(students)
                 updateInstructors(instructors)
+                updateState(state)
+                // depending on what current application state is, we're gonna
+                // need to do something
+                // for example, if there's a broadcast going on, we'll ask the
+                // broadcaster to call us
+                // if there are group discussions going on, we'll ask the
+                // server to appoint a group for us and then we'll call group
+                // members
             },
             function(error) {
                 // handle this error
@@ -74,6 +84,13 @@ PITT.Pitt = function(is_instructor) {
 
         // when instructor leaves, remove them from the array
         session.subscribe("api:instructor_gone", on_instructor_gone)
+
+        // when someone changes global application state (starts broadcasting
+        // or splits students into groups)
+        session.subscribe("api:state_changed", on_state_change)
+    }
+    wamp.onclose = function(reason, details) {
+        console.error("WAMP connection ERROR!", reason, details)
     }
 
     on_new_student = function(args, kwargs, details) {
@@ -106,6 +123,12 @@ PITT.Pitt = function(is_instructor) {
         idx = instructors.indexOf(kwargs["user_id"])
         if (idx != -1) instructors.splice(idx, 1)
         updateInstructors(instructors)
+    }
+
+    on_state_change = function(args, kwargs, details) {
+        console.log("Event: on_state_change")
+        state = args[0]
+        updateState(state)
     }
 
     /***************
@@ -141,6 +164,18 @@ PITT.Pitt = function(is_instructor) {
         peer.on("error", function(error) {
             console.error("PeerJS ERROR!", error)
         })
+
+        peer.on("call", function(call) {
+            console.log("incoming call....", call.metadata)
+            if (call.metadata.mode == STATE.BROADCASTING) {
+                console.log("incoming call2....")
+                call.answer()
+                call.on("stream", function(stream) {
+                    console.log("call stream event")
+                    incomingCall(stream, call)
+                })
+            }
+        })
     };
 
     // establish connections to WAMP router
@@ -150,6 +185,9 @@ PITT.Pitt = function(is_instructor) {
         }
 
         // open WAMP connection if there's PeerServer connection
+        // there's lag before peer.disconnected becomes false and
+        // peer.on('open') happens - and we're interested in the latter, thus
+        // waiting for `user_id`
         if (user_id === undefined) {
             setTimeout(connect_wamp, 100)
         } else {
@@ -157,16 +195,72 @@ PITT.Pitt = function(is_instructor) {
         }
     }
 
+    var start_broadcast = function(success_callback, error_callback) {
+        // 1. get user media
+        navigator.getUserMedia(
+            {audio: true, video: true},
+            function(stream) {
+                user_media = stream
+                // 2. set state: broadcasting (with additional data: user_id)
+                wamp.session.publish("api:state_changed", [STATE.BROADCASTING],
+                                     {broadcaster: user_id},
+                                     {exclude_me: false})  // we'll receive too
+                success_callback(user_media)
+                // 3. call students & instructors!
+                var call
+                for (var i = 0; i < students.length; i++) {
+                    console.log("Calling student:", students[i])
+                    call = peer.call(students[i], user_media,
+                                     {metadata: {mode: STATE.BROADCASTING}})
+                    active_calls[ students[i] ] = call
+                }
+                for (var i = 0; i < instructors.length; i++) {
+                    if (instructors[i] != user_id) {
+                        console.log("Calling instructor:", instructors[i])
+                        call = peer.call(instructors[i], user_media,
+                                         {metadata: {mode: STATE.BROADCASTING}})
+                        active_calls[ instructors[i] ] = call
+                    }
+                }
+            },
+            error_callback
+        )
+        // 4. what about lost peers? What about late peers calling in?
+    }
+    var stop_broadcast = function() {
+        // 1. disconnect all connected peers
+        calls_to_close = Object.keys(active_calls)
+        for (var i = 0; i < calls_to_close.length; i++) {
+            call = calls_to_close[i]
+            console.log("Closing call with", active_calls[call].peer)
+            active_calls[call].close()
+        }
+        // 2. close media stream
+        if (user_media !== undefined) {
+            user_media.stop()
+            user_media == undefined
+        }
+        // 3. publish state change
+        wamp.session.publish("api:state_changed", [STATE.NOTHING], {},
+                             {exclude_me: false})  // we'll receive it too
+    }
+
     var updateUserId = function(id) {}
     var updateStudents = function(students) {}
     var updateInstructors = function(instructors) {}
+    var updateState = function(state) {}
+    var incomingCall = function(stream) {}
 
     INTERFACE.init = init
     INTERFACE.connect_peer = connect_peer
     INTERFACE.connect_wamp = connect_wamp
     INTERFACE.getUserId = function() {return user_id}
+    INTERFACE.onUpdateState = function(_c) {updateState = _c}
     INTERFACE.onUpdateUserId = function(_c) {updateUserId = _c}
     INTERFACE.onUpdateStudents = function(_c) {updateStudents = _c}
     INTERFACE.onUpdateInstructors = function(_c) {updateInstructors = _c}
+    INTERFACE.onIncomingCall = function(_c) {incomingCall = _c}
+    INTERFACE.start_broadcast = start_broadcast
+    INTERFACE.stop_broadcast = stop_broadcast
     return INTERFACE
 };

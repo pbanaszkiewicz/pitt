@@ -11,4 +11,9 @@ var STATE = {
                   // finishes
 }
 
-var DEBUG = 2;
+var DEBUG = 2;  // used by PeerJS
+
+// simple hack to support as many browsers as possible
+navigator.getUserMedia = navigator.getUserMedia ||
+                         navigator.webkitGetUserMedia ||
+                         navigator.mozGetUserMedia

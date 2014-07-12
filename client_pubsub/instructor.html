@@ -54,7 +54,7 @@
                 <div class="control_panel">
                     <p>
                         Split size: <input type="number" name="split_size" id="split_size" min="2" max="6" value="2" style="width: 40px">
-                        <button type="button" class="btn btn-primary btn-sm" id="start_split_mode">Split students into smaller groups</button>
+                        <button type="button" class="btn btn-primary btn-sm" id="start_split_mode">Split students into small groups</button>
                         <button type="button" class="btn btn-primary btn-sm" id="end_split_mode" disabled="disabled">Back to broadcast mode</button>
                     </p>
                 <hr>
@@ -72,9 +72,20 @@
                 <p>List of other instructors:</p>
                 <ul id="instructors_list"></ul>
             </div>
-            <div class="col-sm-10">
-                <h5>Your local stream</h5>
-                <div id="local_stream"></div>
+            <div class="col-sm-8">
+                <div class="row">
+                    <div class="col-sm-8">
+                        <h5>Your local stream</h5>
+                        <div id="local_stream"></div>
+                    </div>
+                    <div class="col-sm-4">
+                        <h5>Remote streams</h5>
+                        <div id="remote_streams"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-2 chat">
+                <h5>Chat</h5>
             </div>
         </div>
     </div>
@@ -90,12 +101,17 @@
     <script type="text/javascript">
       var instructor = new PITT.Pitt(true)
       var gui = new GUI.GUI()
+      gui.init()
       instructor.init()
+      instructor.onUpdateState(gui.onStateChange)
       instructor.onUpdateUserId(gui.onUpdateUserId)
       instructor.onUpdateStudents(gui.onUpdateStudents)
       instructor.onUpdateInstructors(gui.onUpdateInstructors)
+      instructor.onIncomingCall(gui.onIncomingCall)
       instructor.connect_peer()
       instructor.connect_wamp()
+      gui.onStartBroadcasting(instructor.start_broadcast)
+      gui.onStopBroadcasting(instructor.stop_broadcast)
     </script>
 </body>
 </html>

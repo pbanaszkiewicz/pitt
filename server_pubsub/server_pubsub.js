@@ -15,8 +15,8 @@ var connection = new autobahn.Connection({
     realm: "peerinstruction"
 })
 
-var students = new Array()
-var instructors = new Array()
+var students = []
+var instructors = []
 var rooms = {}  // rooms contain arrays of students
 var students_rooms = {}  // student->room relation
 // for example, when rooms["room1"] = Array("student1", "student2")
@@ -35,7 +35,8 @@ var STATE = {
     COUNTDOWN: 3  // small group discussions should end as soon as countdown
                   // finishes
 }
-var state = STATE.NOTHING;
+var state = STATE.NOTHING
+var state_data = {}
 
 connection.onopen = function(session) {
     console.log("Autobahn connection opened.")
@@ -78,28 +79,21 @@ connection.onopen = function(session) {
         if (idx != -1) instructors.splice(idx, 1)
     })
 
-    // two simple RPCs for newcomers
-    session.register("api:get_students_list", function(args, kwargs, details) {
-        console.log("Event: receive students list via RPC")
-        return students
-    })
-    session.register("api:get_instructors_list", function(args, kwargs, details) {
-        console.log("Event: receive instructors list via RPC")
-        return instructors
-    })
-    // and one RPC to get the current mode of the service
-    session.register("api:get_working_mode", function(args, kwargs, details) {
-        console.log("Event: receive currently operating mode")
-        return state
-    })
-
+    // simple RPC for newcomers
     session.register("api:get_current_state", function(args, kwargs, details) {
         console.log("Event: receive application's current state")
         return {
             students: students,
             instructors: instructors,
-            state: state
+            state: state,
+            state_data: state_data
         }
+    })
+
+    session.subscribe("api:state_changed", function(args, kwargs, details) {
+        state = args[0]
+        console.log("State changed: ", state)
+        state_data = kwargs
     })
 
     // first step to split students into smaller groups is to initialize
@@ -107,8 +101,9 @@ connection.onopen = function(session) {
     session.register("api:init_split_mode", function(args, kwargs, details) {
         console.log("Event: some instructor initialized split mode with the size of",
                     kwargs["size"])
-        if (state == STATE.SMALL_GROUPS)
+        if (state == STATE.SMALL_GROUPS) {
             throw new autobahn.Error("api:mode_change_error")
+        }
 
         state = STATE.SMALL_GROUPS
 
