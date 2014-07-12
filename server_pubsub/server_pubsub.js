@@ -23,9 +23,19 @@ var students_rooms = {}  // student->room relation
 // then students_rooms["student1"] = "room1" and
 // students_rooms["student2"] = "room1"
 
-var BROADCAST_MODE = 2
-var GROUP_MODE = 3
-var mode = BROADCAST_MODE
+// the STATE can go like this:
+//  NOTHING → BROADCASTING, NOTHING → SMALL_GROUPS
+//  BROADCASTING → SMALL_GROUPS
+//  SMALL_GROUPS → COUNTDOWN
+//  COUNTDOWN → NOTHING, COUNTDOWN → BROADCASTING
+var STATE = {
+    NOTHING: 0,  // nothing's happening
+    BROADCASTING: 1,  // some instructor is broadcasting
+    SMALL_GROUPS: 2,  // students talk in small groups
+    COUNTDOWN: 3  // small group discussions should end as soon as countdown
+                  // finishes
+}
+var state = STATE.NOTHING;
 
 connection.onopen = function(session) {
     console.log("Autobahn connection opened.")
@@ -76,7 +86,16 @@ connection.onopen = function(session) {
     // and one RPC to get the current mode of the service
     session.register("api:get_working_mode", function(args, kwargs, details) {
         console.log("Event: receive currently operating mode")
-        return mode
+        return state
+    })
+
+    session.register("api:get_current_state", function(args, kwargs, details) {
+        console.log("Event: receive application's current state")
+        return {
+            students: students,
+            instructors: instructors,
+            state: state
+        }
     })
 
     // first step to split students into smaller groups is to initialize
@@ -84,10 +103,10 @@ connection.onopen = function(session) {
     session.register("api:init_split_mode", function(args, kwargs, details) {
         console.log("Event: some instructor initialized split mode with the size of",
                     kwargs["size"])
-        if (mode == GROUP_MODE)
+        if (state == STATE.SMALL_GROUPS)
             throw new autobahn.Error("api:mode_change_error")
 
-        mode = GROUP_MODE
+        state = STATE.SMALL_GROUPS
 
         // in worst case (odd number of students) there's one student without
         // peers
@@ -120,9 +139,9 @@ connection.onopen = function(session) {
 
         // announce split mode to every peer (including instructors)
         session.publish("api:split_mode_enabled")
-        session.publish("api:mode_changed", [mode], {mode: mode})
+        session.publish("api:mode_changed", [state], {state: state})
 
-        return mode  // mode is 2 or 3, if we get 0 then it means errors
+        return state  // state is 1, 2 or 3, if we get 0 then it means errors
     })
 
     // any instructor is allowed to deactivate split-mode by simply invoking
@@ -131,15 +150,15 @@ connection.onopen = function(session) {
         console.log("Event: some instructor ended split mode")
         // TODO: check if the mode hasn't been disabled before
 
-        mode = BROADCAST_MODE
+        state = STATE.BROADCASTING
         rooms = {}
         students_rooms = {}
 
         // announce end of split mode to every peer (including instructors)
         session.publish("api:split_mode_disabled")
-        session.publish("api:mode_changed", [mode], {mode: mode})
+        session.publish("api:mode_changed", [state], {state: state})
 
-        return mode  // mode is 2 or 3, if we get 0 then it means errors
+        return state  // state is 2 or 3, if we get 0 then it means errors
     })
 
     session.register("api:get_room_information", function(args, kwargs, details) {
