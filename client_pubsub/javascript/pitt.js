@@ -66,6 +66,13 @@ PITT.Pitt = function(is_instructor) {
                 // if there are group discussions going on, we'll ask the
                 // server to appoint a group for us and then we'll call group
                 // members
+                if (state == STATE.BROADCASTING) {
+                    session.publish("api:call_me", [user_id])
+                } else if (state == STATE.SMALL_GROUPS) {
+                    // do nothing?
+                } else if (state == STATE.COUNTDOWN) {
+                    // show the countdown
+                }
             },
             function(error) {
                 // handle this error
@@ -131,6 +138,17 @@ PITT.Pitt = function(is_instructor) {
         updateState(state)
     }
 
+    on_call_me = function(args, kwargs, details) {
+        peer_id = args[0]
+        console.log("Event: call_me. Someone wants me to call them:",
+                    peer_id)
+        if (active_calls[peer_id] === undefined) {
+            call = peer.call(peer_id, user_media,
+                             {metadata: {mode: STATE.BROADCASTING}})
+            active_calls[peer_id] = call
+        }
+    }
+
     /***************
     PUBLIC INTERFACE
     ***************/
@@ -166,9 +184,8 @@ PITT.Pitt = function(is_instructor) {
         })
 
         peer.on("call", function(call) {
-            console.log("incoming call....", call.metadata)
+            console.log("Incoming call from:", call.peer)
             if (call.metadata.mode == STATE.BROADCASTING) {
-                console.log("incoming call2....")
                 call.answer()
                 call.on("stream", function(stream) {
                     console.log("call stream event")
@@ -218,7 +235,7 @@ PITT.Pitt = function(is_instructor) {
                     if (instructors[i] != user_id) {
                         console.log("Calling instructor:", instructors[i])
                         call = peer.call(instructors[i], user_media,
-                                         {metadata: {mode: STATE.BROADCASTING}})
+                                        {metadata: {mode: STATE.BROADCASTING}})
                         active_calls[ instructors[i] ] = call
                     }
                 }
@@ -226,6 +243,7 @@ PITT.Pitt = function(is_instructor) {
             error_callback
         )
         // 4. what about lost peers? What about late peers calling in?
+        wamp.session.subscribe("api:call_me", on_call_me)
     }
     var stop_broadcast = function() {
         // 1. disconnect all connected peers
@@ -243,6 +261,8 @@ PITT.Pitt = function(is_instructor) {
         // 3. publish state change
         wamp.session.publish("api:state_changed", [STATE.NOTHING], {},
                              {exclude_me: false})  // we'll receive it too
+        // 4. unsubscribe from "on_call_me" event
+        wamp.session.unsubscribe("api:call_me")
     }
 
     var updateUserId = function(id) {}

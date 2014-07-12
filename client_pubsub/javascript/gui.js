@@ -128,7 +128,6 @@ GUI.GUI = function() {
 
     INTERFACE.onIncomingCall = function(stream, call) {
         // 1. get properties from `call` object (PeerJS MediaConnection)
-        console.log("Incoming call from:", call.peer)
         var src = URL.createObjectURL(stream)
         // 2. add the video somewhere
         add_video_element("#remote_streams", "video_" + call.peer,
