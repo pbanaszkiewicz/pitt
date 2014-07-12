@@ -6,6 +6,8 @@ PITT.Pitt = function(is_instructor) {
     var instructor = is_instructor
     var user_media
     var state = STATE.NOTHING  // from `globals.js`
+    var state_data = {}  // additional data associated with current state, like
+                         // broadcaster ID…
 
     var students = []  // list of students
     var instructors = []  // list of instructors
@@ -56,9 +58,11 @@ PITT.Pitt = function(is_instructor) {
                 students = result.students
                 instructors = result.instructors
                 state = result.state
+                state_data = result.state_data
+
                 updateStudents(students)
                 updateInstructors(instructors)
-                updateState(state)
+                updateState(state, state_data)
                 // depending on what current application state is, we're gonna
                 // need to do something
                 // for example, if there's a broadcast going on, we'll ask the
@@ -69,9 +73,9 @@ PITT.Pitt = function(is_instructor) {
                 if (state == STATE.BROADCASTING) {
                     session.publish("api:call_me", [user_id])
                 } else if (state == STATE.SMALL_GROUPS) {
-                    // do nothing?
+                    // do something?
                 } else if (state == STATE.COUNTDOWN) {
-                    // show the countdown
+                    // show the countdown? Call in before that?
                 }
             },
             function(error) {
@@ -135,8 +139,13 @@ PITT.Pitt = function(is_instructor) {
     on_state_change = function(args, kwargs, details) {
         console.log("Event: on_state_change")
         state = args[0]
-        updateState(state)
+        state_data = kwargs
+        updateState(state, state_data)
     }
+
+    // we need a global variable to hold information about a WAMP subscription
+    // so that it's possible to unsubscribe from it later :/
+    var call_me_subscription
 
     on_call_me = function(args, kwargs, details) {
         peer_id = args[0]
@@ -218,11 +227,13 @@ PITT.Pitt = function(is_instructor) {
             {audio: true, video: true},
             function(stream) {
                 user_media = stream
+
                 // 2. set state: broadcasting (with additional data: user_id)
                 wamp.session.publish("api:state_changed", [STATE.BROADCASTING],
                                      {broadcaster: user_id},
                                      {exclude_me: false})  // we'll receive too
                 success_callback(user_media)
+
                 // 3. call students & instructors!
                 var call
                 for (var i = 0; i < students.length; i++) {
@@ -242,8 +253,17 @@ PITT.Pitt = function(is_instructor) {
             },
             error_callback
         )
+
         // 4. what about lost peers? What about late peers calling in?
-        wamp.session.subscribe("api:call_me", on_call_me)
+        // someone joins / recalls, they simply publish api:call_me with their
+        // peer ID and this broadcaster calls them back
+        // `call_me_subscription` is required to unsubscribe in the
+        // `stop_broadcast` method
+        wamp.session.subscribe("api:call_me", on_call_me).then(
+            function(subscription) {
+                call_me_subscription = subscription
+            }
+        )
     }
     var stop_broadcast = function() {
         // 1. disconnect all connected peers
@@ -262,13 +282,14 @@ PITT.Pitt = function(is_instructor) {
         wamp.session.publish("api:state_changed", [STATE.NOTHING], {},
                              {exclude_me: false})  // we'll receive it too
         // 4. unsubscribe from "on_call_me" event
-        wamp.session.unsubscribe("api:call_me")
+        wamp.session.unsubscribe(call_me_subscription)
+        call_me_subscription = undefined
     }
 
     var updateUserId = function(id) {}
     var updateStudents = function(students) {}
     var updateInstructors = function(instructors) {}
-    var updateState = function(state) {}
+    var updateState = function(state, state_data) {}
     var incomingCall = function(stream) {}
 
     INTERFACE.init = init

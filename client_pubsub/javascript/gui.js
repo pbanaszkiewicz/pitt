@@ -44,7 +44,7 @@ GUI.GUI = function() {
         $("#user_id").text("Not connected")
     }
 
-    INTERFACE.onStateChange = function(state) {
+    INTERFACE.onStateChange = function(state, state_data) {
         switch (state) {
             case STATE.NOTHING:
                 btn_start_split.attr("disabled", false)
@@ -58,10 +58,14 @@ GUI.GUI = function() {
                 break
 
             case STATE.BROADCASTING:
+                broadcaster = state_data.broadcaster
                 btn_start_split.attr("disabled", false)
                 btn_stop_split.attr("disabled", true)
                 btn_start_broadcast.attr("disabled", true)
-                btn_stop_broadcast.attr("disabled", false)
+                // we want to prevent other instructors from ending
+                // broadcaster's broadcast.  And causing lots of errors…
+                btn_stop_broadcast.attr("disabled",
+                                        broadcaster === user_id ? false : true)
                 div_countdown.hide()
                 break
 
