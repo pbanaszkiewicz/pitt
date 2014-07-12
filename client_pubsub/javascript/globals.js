@@ -10,3 +10,5 @@ var STATE = {
     COUNTDOWN: 3  // small group discussions should end as soon as countdown
                   // finishes
 }
+
+var DEBUG = 2;

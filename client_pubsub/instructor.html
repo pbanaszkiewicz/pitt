@@ -12,12 +12,6 @@
       <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
     <![endif]-->
     <title>Instructor dashboard • Peer instruction</title>
-
-    <script type="text/javascript">
-    var STUDENT = 0;
-    var INSTRUCTOR = 1;
-    var MODE_TYPE = INSTRUCTOR;
-    </script>
 </head>
 <body>
 
@@ -89,6 +83,19 @@
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
     <script type="text/javascript" src="/javascript/peer.min.js"></script>
     <script type="text/javascript" src="/javascript/autobahn.min.js"></script>
-    <script type="text/javascript" src="/javascript/application.js"></script>
+
+    <script type="text/javascript" src="/javascript/globals.js"></script>
+    <script type="text/javascript" src="/javascript/gui.js"></script>
+    <script type="text/javascript" src="/javascript/pitt.js"></script>
+    <script type="text/javascript">
+      var instructor = new PITT.Pitt(true)
+      var gui = new GUI.GUI()
+      instructor.init()
+      instructor.onUpdateUserId(gui.onUpdateUserId)
+      instructor.onUpdateStudents(gui.onUpdateStudents)
+      instructor.onUpdateInstructors(gui.onUpdateInstructors)
+      instructor.connect_peer()
+      instructor.connect_wamp()
+    </script>
 </body>
 </html>

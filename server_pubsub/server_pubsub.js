@@ -15,8 +15,8 @@ var connection = new autobahn.Connection({
     realm: "peerinstruction"
 })
 
-var students = Array()
-var instructors = Array()
+var students = new Array()
+var instructors = new Array()
 var rooms = {}  // rooms contain arrays of students
 var students_rooms = {}  // student->room relation
 // for example, when rooms["room1"] = Array("student1", "student2")
@@ -47,7 +47,9 @@ connection.onopen = function(session) {
     // when a new student arrives, add them to the array and redraw DOM list
     session.subscribe("api:new_student", function(args, kwargs, details) {
         console.log("Event: new_student")
-        students.push(kwargs["user_id"])
+        idx = students.indexOf(kwargs["user_id"])
+        if (idx == -1)
+            students.push(kwargs["user_id"])
     })
 
     // when student leaves, remove them from the array and redraw DOM list
@@ -62,7 +64,9 @@ connection.onopen = function(session) {
     // when a new instructor arrives, add them to the array and redraw DOM list
     session.subscribe("api:new_instructor", function(args, kwargs, details) {
         console.log("Event: new_instructor")
-        instructors.push(kwargs["user_id"])
+        idx = instructors.indexOf(kwargs["user_id"])
+        if (idx == -1)
+            instructors.push(kwargs["user_id"])
     })
 
     // when instructor leaves, remove them from the array and redraw DOM list
