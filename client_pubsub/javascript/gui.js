@@ -59,21 +59,26 @@ GUI.GUI = function() {
 
             case STATE.BROADCASTING:
                 broadcaster = state_data.broadcaster
-                btn_start_split.attr("disabled", false)
                 btn_stop_split.attr("disabled", true)
                 btn_start_broadcast.attr("disabled", true)
                 // we want to prevent other instructors from ending
                 // broadcaster's broadcast.  And causing lots of errors…
+                btn_start_split.attr("disabled",
+                                     broadcaster === user_id ? false : true)
                 btn_stop_broadcast.attr("disabled",
                                         broadcaster === user_id ? false : true)
                 div_countdown.hide()
                 break
 
             case STATE.SMALL_GROUPS:
+                initializer = state_data.initializer
                 btn_start_split.attr("disabled", true)
-                btn_stop_split.attr("disabled", false)
-                btn_start_broadcast.attr("disabled", false)
-                btn_stop_broadcast.attr("disabled", false)
+                // we want to prevent other instructors from ending
+                // groups discussions started by other instructor
+                btn_stop_split.attr("disabled",
+                                    initializer === user_id ? false : true)
+                btn_start_broadcast.attr("disabled", true)
+                btn_stop_broadcast.attr("disabled", true)
                 div_countdown.hide()
                 break
 
@@ -107,9 +112,9 @@ GUI.GUI = function() {
         redraw_list("#instructors_list", instructors, user_id)
     }
 
-    INTERFACE.onStartBroadcasting = function(callback) {
+    INTERFACE.onStartBroadcasting = function(start_broadcast_callback) {
         btn_start_broadcast.click(function() {
-            callback(
+            start_broadcast_callback(
                 function(stream) {
                     console.log("User media access granted")
                     var src = URL.createObjectURL(stream)
@@ -123,9 +128,9 @@ GUI.GUI = function() {
         })
     }
 
-    INTERFACE.onStopBroadcasting = function(callback) {
+    INTERFACE.onStopBroadcasting = function(stop_broadcast_callback) {
         btn_stop_broadcast.click(function() {
-            callback()
+            stop_broadcast_callback()
             $("#video_" + user_id).remove()
         })
     }
@@ -147,6 +152,19 @@ GUI.GUI = function() {
         call.on("error", function(error) {
             console.error("PeerJS MediaConnection ERROR!", error)
             $("#video_" + call.peer).remove()
+        })
+    }
+
+    INTERFACE.onSplitStudents = function(split_mode_callback) {
+        btn_start_split.click(function() {
+            size = $("#split_size").val()
+            split_mode_callback(size)
+        })
+    }
+
+    INTERFACE.onBackToBroadcast = function(countdown_callb, stop_split_callb) {
+        btn_stop_split.click(function() {
+            stop_split_callb()
         })
     }
 

@@ -112,6 +112,8 @@
       instructor.connect_wamp()
       gui.onStartBroadcasting(instructor.start_broadcast)
       gui.onStopBroadcasting(instructor.stop_broadcast)
+      gui.onSplitStudents(instructor.start_split_mode)
+      gui.onBackToBroadcast(instructor.countdown, instructor.stop_split_mode)
     </script>
 </body>
 </html>

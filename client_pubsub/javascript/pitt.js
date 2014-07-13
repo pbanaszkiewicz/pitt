@@ -197,7 +197,7 @@ PITT.Pitt = function(is_instructor) {
             if (call.metadata.mode == STATE.BROADCASTING) {
                 call.answer()
                 call.on("stream", function(stream) {
-                    console.log("call stream event")
+                    // console.log("call stream event")
                     incomingCall(stream, call)
                 })
             }
@@ -286,6 +286,52 @@ PITT.Pitt = function(is_instructor) {
         call_me_subscription = undefined
     }
 
+    var start_split_mode = function(group_size) {
+        // other instructors should not be able to stop broadcaster, but let's
+        // check just in case
+        if (state == STATE.BROADCASTING && state_data.broadcaster == user_id) {
+            stop_broadcast()
+        }
+
+        // I think there might be a race condition, so lets just pause for
+        // a second (almost)
+        if (state != STATE.NOTHING) {
+            setTimeout(start_split_mode, 100)
+            return;
+        }
+
+        wamp.session.publish("api:state_changed", [STATE.SMALL_GROUPS],
+                             {initializer: user_id},
+                             {exclude_me: false})
+
+        wamp.session.call("api:init_split_mode", [], {size: group_size}).then(
+            function(success) {
+                console.log("Split mode has been enabled")
+            },
+            function(error) {
+                console.error("Split mode ERROR!", error, error.args,
+                              error.kwargs, error.error)
+            }
+        )
+    }
+
+    var stop_split_mode = function() {
+        if (state_data.initializer == user_id) {
+            wamp.session.call("api:end_split_mode").then(
+                function(success) {
+                    console.log("Split mode has been disabled")
+                    wamp.session.publish("api:state_changed", [STATE.NOTHING],
+                                         {}, {exclude_me: false})
+                },
+                function(error) {
+                    console.error("Split mode end ERROR!", error, error.error)
+                }
+            )
+        }
+    }
+
+    var countdown = function () {}
+
     var updateUserId = function(id) {}
     var updateStudents = function(students) {}
     var updateInstructors = function(instructors) {}
@@ -295,13 +341,21 @@ PITT.Pitt = function(is_instructor) {
     INTERFACE.init = init
     INTERFACE.connect_peer = connect_peer
     INTERFACE.connect_wamp = connect_wamp
+
     INTERFACE.getUserId = function() {return user_id}
+
     INTERFACE.onUpdateState = function(_c) {updateState = _c}
     INTERFACE.onUpdateUserId = function(_c) {updateUserId = _c}
     INTERFACE.onUpdateStudents = function(_c) {updateStudents = _c}
     INTERFACE.onUpdateInstructors = function(_c) {updateInstructors = _c}
     INTERFACE.onIncomingCall = function(_c) {incomingCall = _c}
+
     INTERFACE.start_broadcast = start_broadcast
     INTERFACE.stop_broadcast = stop_broadcast
+
+    INTERFACE.start_split_mode = start_split_mode
+    INTERFACE.stop_split_mode = stop_split_mode
+    INTERFACE.countdown = countdown
+
     return INTERFACE
 };
