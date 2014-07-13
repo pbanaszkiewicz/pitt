@@ -4,6 +4,7 @@ PITT.Pitt = function(is_instructor) {
     var INTERFACE = {}
     var user_id
     var instructor = is_instructor
+    var student = !is_instructor
     var user_media
     var state = STATE.NOTHING  // from `globals.js`
     var state_data = {}  // additional data associated with current state, like
@@ -12,6 +13,7 @@ PITT.Pitt = function(is_instructor) {
     var students = []  // list of students
     var instructors = []  // list of instructors
     var active_calls = {}  // list of peers that we have active call with
+    var students_in_room = []  // list of peers that are within the same room
 
     // can't create peer object here, because it automatically tries to connect
     // to the PeerServer.  Thus, `Pitt.init()`.
@@ -99,6 +101,14 @@ PITT.Pitt = function(is_instructor) {
         // when someone changes global application state (starts broadcasting
         // or splits students into groups)
         session.subscribe("api:state_changed", on_state_change)
+
+        if (student) {
+            // when group mode is started
+            session.subscribe("api:split_mode_enabled", on_split_mode_enabled)
+            // or stopped
+            session.subscribe("api:split_mode_disabled",
+                              on_split_mode_disabled)
+        }
     }
     wamp.onclose = function(reason, details) {
         console.error("WAMP connection ERROR!", reason, details)
@@ -148,7 +158,7 @@ PITT.Pitt = function(is_instructor) {
     var call_me_subscription
 
     on_call_me = function(args, kwargs, details) {
-        peer_id = args[0]
+        var peer_id = args[0]
         console.log("Event: call_me. Someone wants me to call them:",
                     peer_id)
         if (active_calls[peer_id] === undefined) {
@@ -156,6 +166,23 @@ PITT.Pitt = function(is_instructor) {
                              {metadata: {mode: STATE.BROADCASTING}})
             active_calls[peer_id] = call
         }
+    }
+
+    on_split_mode_enabled = function(args, kwargs, details) {
+        var students_in_rooms = kwargs["students_in_rooms"]
+        var rooms = kwargs["rooms"]
+        var my_room = students_in_rooms[user_id]
+        console.log("Event: split_mode_enabled. I'm in the room", my_room)
+        students_in_room = rooms[my_room]
+        updateStudentsInRoom(students_in_room)
+
+        // call everyone
+    }
+
+    on_split_mode_disabled = function(args, kwargs, details) {
+        students_in_room = []
+        console.log("Event: split_mode_disabled.")
+        updateStudentsInRoom(students_in_room)
     }
 
     /***************
@@ -337,6 +364,7 @@ PITT.Pitt = function(is_instructor) {
     var updateInstructors = function(instructors) {}
     var updateState = function(state, state_data) {}
     var incomingCall = function(stream) {}
+    var updateStudentsInRoom = function(students) {}
 
     INTERFACE.init = init
     INTERFACE.connect_peer = connect_peer
@@ -349,6 +377,7 @@ PITT.Pitt = function(is_instructor) {
     INTERFACE.onUpdateStudents = function(_c) {updateStudents = _c}
     INTERFACE.onUpdateInstructors = function(_c) {updateInstructors = _c}
     INTERFACE.onIncomingCall = function(_c) {incomingCall = _c}
+    INTERFACE.onUpdateStudentsInRoom = function(_c) {updateStudentsInRoom = _c}
 
     INTERFACE.start_broadcast = start_broadcast
     INTERFACE.stop_broadcast = stop_broadcast

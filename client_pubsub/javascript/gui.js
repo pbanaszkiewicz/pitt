@@ -37,6 +37,7 @@ GUI.GUI = function() {
         video.prop("class", v_class)
         video.prop("src", src)
         video.prop("muted", muted)
+        video.prop("poster", "/img/white-noise-640x480.jpg")
         $(el).append(video)
     }
 
@@ -166,6 +167,10 @@ GUI.GUI = function() {
         btn_stop_split.click(function() {
             stop_split_callb()
         })
+    }
+
+    INTERFACE.onUpdateStudentsInRoom = function(students) {
+        redraw_list("#room_peers_list", students, user_id)
     }
 
     return INTERFACE

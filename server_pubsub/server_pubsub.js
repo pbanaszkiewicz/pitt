@@ -51,6 +51,8 @@ connection.onopen = function(session) {
         index = students.indexOf(kwargs["user_id"])
         if (index == -1)
             students.push(kwargs["user_id"])
+
+        // TODO: if STATE.SMALL_GROUPS, join the student in some room...
     })
 
     // when student leaves, remove them from the array and redraw DOM list
@@ -110,7 +112,7 @@ connection.onopen = function(session) {
     session.register("api:init_split_mode", function(args, kwargs, details) {
         // in worst case (odd number of students) there's one student without
         // peers
-        var students_per_room = kwargs["size"] || 2
+        var students_per_room = parseInt(kwargs["size"] || 2, 10)
 
         console.log("Event: some instructor initialized split mode with the" +
                     " size of", students_per_room)
@@ -141,7 +143,8 @@ connection.onopen = function(session) {
             rooms["room" + j] = students.slice(i, i + students_per_room)
 
             // save student and corresponding room in students_rooms
-            for (var k = i; k < i + students_per_room; k++) {
+            for (var k = i;
+                 k < Math.min(i + students_per_room, students_count); k++) {
                 student = students[k]
                 students_rooms[student] = "room" + j
             }
@@ -160,14 +163,17 @@ connection.onopen = function(session) {
             lone_student = rooms["room" + (j - 1)].pop()
             rooms["room" + (j - 2)].push(lone_student)
             students_rooms[lone_student] = "room" + (j - 2)
+            delete rooms["room" + (j - 1)]
         }
 
         console.log("Students have been split into groups of",
                     students_per_room)
         console.log("Rooms:", rooms)
+        console.log("Students <-> rooms:", students_rooms)
 
         // announce split mode to every peer (including instructors)
-        session.publish("api:split_mode_enabled")
+        session.publish("api:split_mode_enabled", [],
+                        {rooms: rooms, students_in_rooms: students_rooms})
 
         return state
     })
@@ -187,7 +193,7 @@ connection.onopen = function(session) {
         students_rooms = {}
 
         // announce end of split mode to every peer (including instructors)
-        session.publish("api:split_mode_disabled")
+        session.publish("api:split_mode_disabled", [])
 
         return state
     })
