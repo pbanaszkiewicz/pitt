@@ -51,8 +51,6 @@ connection.onopen = function(session) {
         index = students.indexOf(kwargs["user_id"])
         if (index == -1)
             students.push(kwargs["user_id"])
-
-        // TODO: if STATE.SMALL_GROUPS, join the student in some room...
     })
 
     // when student leaves, remove them from the array and redraw DOM list
@@ -62,6 +60,9 @@ connection.onopen = function(session) {
         // remove 1 element starting at index of the leaving user
         index = students.indexOf(kwargs["user_id"])
         if (index != -1) students.splice(index, 1)
+
+        // TODO: if STATE.SMALL_GROUPS, remove the student from `rooms` and
+        //       from `students_rooms`...
     })
 
     // when a new instructor arrives, add them to the array and redraw DOM list
@@ -93,6 +94,30 @@ connection.onopen = function(session) {
     // simple RPC for newcomers
     session.register("api:get_current_state", function(args, kwargs, details) {
         console.log("Event: receive application's current state")
+
+        if (state == STATE.SMALL_GROUPS || state == STATE.COUNTDOWN) {
+            // select a room for that newcomer
+            var user_id = kwargs["user_id"]
+            if (students.indexOf(user_id) !== -1 &&
+                students_rooms[user_id] == undefined) {
+
+                // let's put them in the room with lowest number of students
+                var room_names = Object.keys(rooms)
+                var min = rooms[ room_names[0] ].length
+                var min_room = room_names[0]
+                for (var i = 0; i < room_names.length; i++) {
+                    if (rooms[ room_names[i] ].length < min) {
+                        min = rooms[ room_names[i] ].length
+                        min_room = room_names[i]
+                    }
+                }
+
+                state_data["join_room"] = min_room
+            }
+        } else {
+            state_data["join_room"] = undefined
+        }
+
         return {
             students: students,
             instructors: instructors,
@@ -199,6 +224,7 @@ connection.onopen = function(session) {
     })
 
     // students willing to get information about their room call this procedure
+    // DEPRECATED
     session.register("api:get_room_information",
         function(args, kwargs, details) {
             console.log("Event: some student wants to know their room")

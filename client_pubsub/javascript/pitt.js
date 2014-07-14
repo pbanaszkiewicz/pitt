@@ -14,6 +14,7 @@ PITT.Pitt = function(is_instructor) {
     var instructors = []  // list of instructors
     var active_calls = {}  // list of peers that we have active call with
     var students_in_room = []  // list of peers that are within the same room
+    var room_id  // the name of the room we're in
 
     // can't create peer object here, because it automatically tries to connect
     // to the PeerServer.  Thus, `Pitt.init()`.
@@ -30,12 +31,9 @@ PITT.Pitt = function(is_instructor) {
         retry_delay_growth: 1.0
     })
 
-    // in case of race where user is super slow, the browser should wait
-    // e.g.: we ask for webcam access, and after it's granted we should connect
-    // to PeerServer.  So init() will make that connection if vars below are
-    // true
-    var _wait_for_peer = false
-    // var _wait_for_wamp = false
+    /**********
+    "ON" EVENTS
+    **********/
 
     wamp.onopen = function(session) {
         // this happens *always* after successful connection to the
@@ -62,7 +60,7 @@ PITT.Pitt = function(is_instructor) {
             })
         }
 
-        session.call("api:get_current_state").then(
+        session.call("api:get_current_state", [], {user_id: user_id}).then(
             function(result) {
                 students = result.students
                 instructors = result.instructors
@@ -80,16 +78,22 @@ PITT.Pitt = function(is_instructor) {
                 // server to appoint a group for us and then we'll call group
                 // members
                 if (state == STATE.BROADCASTING) {
+                    console.log("Asking the broadcaster to call me")
                     session.publish("api:call_me", [user_id])
                 } else if (state == STATE.SMALL_GROUPS) {
-                    // do something?
+                    // the server has given a room to join, so let's ask the
+                    // peers in that room to call us
+                    console.log("Asking peers in the room to call me")
+                    session.publish("api:call_me", [user_id,
+                                    state_data["join_room"]])
                 } else if (state == STATE.COUNTDOWN) {
                     // show the countdown? Call in before that?
                 }
             },
             function(error) {
                 // handle this error
-                console.error("Couldn't retrieve application's current state!")
+                console.error("Couldn't retrieve application's current state!",
+                              error)
             }
         )
 
@@ -166,12 +170,34 @@ PITT.Pitt = function(is_instructor) {
 
     on_call_me = function(args, kwargs, details) {
         var peer_id = args[0]
-        console.log("Event: call_me. Someone wants me to call them:",
-                    peer_id)
-        if (active_calls[peer_id] === undefined) {
-            call = peer.call(peer_id, user_media,
-                             {metadata: {mode: state}})
-            active_calls[peer_id] = call
+        var peer_room_id = args[1]
+
+        // in case we're in SMALL_GROUPS mode, both vars will be names (for
+        // example "room0" and "room1") and will only match if the callee wants
+        // to be in the same room as caller
+        // in case we're in BROADCAST mode,
+        if (peer_room_id == room_id) {
+            console.log("Event: call_me. Someone wants me to call them:",
+                        peer_id)
+            if (active_calls[peer_id] === undefined) {
+                call = peer.call(peer_id, user_media,
+                                 {metadata: {mode: state}})
+                active_calls[peer_id] = call
+
+                call.on("stream", function(stream) {
+                    console.log("Callee just answered my call!")
+                    incomingCall(stream, call)
+                })
+                call.on("close", function() {
+                    console.log("PeerJS MediaConnection closed, call with:",
+                                call.peer)
+                    droppedCall(call.peer)
+                })
+                call.on("error", function(error) {
+                    console.error("PeerJS MediaConnection ERROR!", error)
+                    droppedCall(call.peer, error)
+                })
+            }
         }
     }
 
@@ -180,6 +206,8 @@ PITT.Pitt = function(is_instructor) {
         var students_in_rooms = kwargs["students_in_rooms"]
         var rooms = kwargs["rooms"]
         var my_room = students_in_rooms[user_id]
+        room_id = my_room
+
         students_in_room = rooms[my_room]
         console.log("Event: split_mode_enabled. I'm in the room", my_room,
                     "with", students_in_room)
@@ -194,8 +222,33 @@ PITT.Pitt = function(is_instructor) {
                 call = peer.call(student, user_media,
                                  {metadata: {mode: state}})
                 active_calls[peer_id] = call
+
+                call.on("stream", function(stream) {
+                    console.log("Someone just answered my call!")
+                    incomingCall(stream, call)
+                })
+                call.on("close", function() {
+                    console.log("PeerJS MediaConnection closed, call with:",
+                                call.peer)
+                    droppedCall(call.peer)
+                })
+                call.on("error", function(error) {
+                    console.error("PeerJS MediaConnection ERROR!", error)
+                    droppedCall(call.peer, error)
+                })
             }
         }
+
+        // What about lost peers? What about late peers calling in?
+        // Someone joins / recalls, they simply publish api:call_me with their
+        // peer ID and room # and this peer calls them back.
+        // `call_me_subscription` is required to unsubscribe in the
+        // `on_split_mode_disabled` method
+        wamp.session.subscribe("api:call_me", on_call_me).then(
+            function(subscription) {
+                call_me_subscription = subscription
+            }
+        )
     }
 
     on_split_mode_disabled = function(args, kwargs, details) {
@@ -204,6 +257,7 @@ PITT.Pitt = function(is_instructor) {
         console.log("Event: split_mode_disabled.")
         updateStudentsInRoom(students_in_room)
 
+        // close all the calls
         var calls_to_close = Object.keys(calls_in_room)
         for (var i = 0; i < calls_to_close.length; i++) {
             var call = calls_to_close[i]
@@ -211,6 +265,8 @@ PITT.Pitt = function(is_instructor) {
             active_calls[call].close()
             active_calls[call] = undefined
         }
+        active_calls = {}
+        room_id = undefined
     }
 
     /***************
@@ -273,12 +329,13 @@ PITT.Pitt = function(is_instructor) {
                 if (call.metadata.mode == STATE.BROADCASTING) {
                     call.answer()
                     call.on("stream", function(stream) {
-                        // console.log("call stream event")
+                        console.log("call stream event (BROADCASTING)")
                         incomingCall(stream, call)
                     })
                 } else if (call.metadata.mode == STATE.SMALL_GROUPS) {
                     call.answer(user_media)
                     call.on("stream", function(stream) {
+                        console.log("call stream event (SMALL_GROUPS)")
                         incomingCall(stream, call)
                     })
                 }
@@ -402,7 +459,8 @@ PITT.Pitt = function(is_instructor) {
     var updateStudents = function(students) {}
     var updateInstructors = function(instructors) {}
     var updateState = function(state, state_data) {}
-    var incomingCall = function(stream) {}
+    var incomingCall = function(stream, call) {}
+    var droppedCall = function(peer_id, reason) {}
     var updateStudentsInRoom = function(students) {}
 
     INTERFACE.init = init
@@ -416,6 +474,7 @@ PITT.Pitt = function(is_instructor) {
     INTERFACE.onUpdateStudents = function(_c) {updateStudents = _c}
     INTERFACE.onUpdateInstructors = function(_c) {updateInstructors = _c}
     INTERFACE.onIncomingCall = function(_c) {incomingCall = _c}
+    INTERFACE.onDroppedCall = function(_c) {droppedCall = _c}
     INTERFACE.onUpdateStudentsInRoom = function(_c) {updateStudentsInRoom = _c}
 
     INTERFACE.start_broadcast = start_broadcast

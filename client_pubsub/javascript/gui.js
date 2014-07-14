@@ -48,7 +48,7 @@ GUI.GUI = function() {
         // -1 is not defined, therefore will trigger `default` action
         stateChange(-1, {})
 
-        $("#user_stream").on("click", function(e) {
+        user_stream.on("click", function(e) {
             main_stream.prop("src", e.target.src)
             main_stream.addClass("local-stream")
         })
@@ -81,6 +81,7 @@ GUI.GUI = function() {
                 div_countdown.hide()
                 // we should clear streams when there's nothing to show
                 main_stream.prop("src", "")
+                main_stream.removeClass("local-stream")
                 $("#remote_streams").empty()
                 break
 
@@ -167,18 +168,11 @@ GUI.GUI = function() {
         add_video_element("#remote_streams", "video_" + call.peer,
                           "remote-stream medium-size video-thumbnail", src,
                           false)
+    }
 
-        // AM I CRAZY?! this might need to be moved out from here, back to
-        // `pitt.js`
-        call.on("close", function() {
-            console.log("PeerJS MediaConnection closed, call with:",
-                        call.peer)
-            $("#video_" + call.peer).remove()
-        })
-        call.on("error", function(error) {
-            console.error("PeerJS MediaConnection ERROR!", error)
-            $("#video_" + call.peer).remove()
-        })
+    INTERFACE.onDroppedCall = function(peer_id, reason) {
+        console.log("Removing video from", peer_id)
+        $("#video_" + peer_id).remove()
     }
 
     INTERFACE.onSplitStudents = function(split_mode_callback) {
