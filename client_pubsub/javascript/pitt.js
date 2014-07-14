@@ -30,6 +30,13 @@ PITT.Pitt = function(is_instructor) {
         retry_delay_growth: 1.0
     })
 
+    // in case of race where user is super slow, the browser should wait
+    // e.g.: we ask for webcam access, and after it's granted we should connect
+    // to PeerServer.  So init() will make that connection if vars below are
+    // true
+    var _wait_for_peer = false
+    // var _wait_for_wamp = false
+
     wamp.onopen = function(session) {
         // this happens *always* after successful connection to the
         // PeerServer
@@ -190,53 +197,71 @@ PITT.Pitt = function(is_instructor) {
     ***************/
 
     // use this function to init the state of this Pitt object
-    var init = function() {
-        peer = new Peer({
-            host: "/",  // the same hostname as window.location.hostname
-            port: 9000,
-            debug: DEBUG || 2
-        })
+    var init = function(success_callback, error_callback) {
+        navigator.getUserMedia(
+            {audio: true, video: true},
+            function(stream) {
+                user_media = stream
+                success_callback(stream)
+
+                peer = new Peer({
+                    host: "/",  // the same as window.location.hostname
+                    port: 9000,
+                    debug: DEBUG || 2
+                })
+
+                connect_peer()
+                connect_wamp()
+                // if (_wait_for_wamp) {
+                //     _wait_for_wamp = false
+                //     connect_wamp()
+                // }
+            },
+            function(error) {
+                // ooops… can't continue then.
+                wamp = undefined
+                peer = undefined
+                error_callback(error)
+            }
+        )
     }
 
     // establish connections to PeerServer
     var connect_peer = function() {
-        if (peer == undefined) {
-            init()
+        // wait for proper connection from PeerServer
+        if (peer === undefined || peer.disconnected === true) {
+            setTimeout(connect_peer, 100)
+        } else {
+            peer.on("open", function(id) {
+                user_id = id
+                console.log("Connected to PeerServer. New id:", user_id)
+                updateUserId(id)
+            })
+
+            peer.on("disconnect", function() {
+                console.log("Disconnected from PeerServer. Reconnecting…")
+                peer.reconnect()
+            })
+
+            peer.on("error", function(error) {
+                console.error("PeerJS ERROR!", error)
+            })
+
+            peer.on("call", function(call) {
+                console.log("Incoming call from:", call.peer)
+                if (call.metadata.mode == STATE.BROADCASTING) {
+                    call.answer()
+                    call.on("stream", function(stream) {
+                        // console.log("call stream event")
+                        incomingCall(stream, call)
+                    })
+                }
+            })
         }
-
-        peer.on("open", function(id) {
-            user_id = id
-            console.log("Connected to PeerServer. New id:", user_id)
-            updateUserId(id)
-        })
-
-        peer.on("disconnect", function() {
-            console.log("Disconnected from PeerServer. Reconnecting…")
-            peer.reconnect()
-        })
-
-        peer.on("error", function(error) {
-            console.error("PeerJS ERROR!", error)
-        })
-
-        peer.on("call", function(call) {
-            console.log("Incoming call from:", call.peer)
-            if (call.metadata.mode == STATE.BROADCASTING) {
-                call.answer()
-                call.on("stream", function(stream) {
-                    // console.log("call stream event")
-                    incomingCall(stream, call)
-                })
-            }
-        })
     };
 
     // establish connections to WAMP router
     var connect_wamp = function() {
-        if (peer == undefined || peer.disconnected === true) {
-            connect_peer()
-        }
-
         // open WAMP connection if there's PeerServer connection
         // there's lag before peer.disconnected becomes false and
         // peer.on('open') happens - and we're interested in the latter, thus
@@ -249,37 +274,33 @@ PITT.Pitt = function(is_instructor) {
     }
 
     var start_broadcast = function(success_callback, error_callback) {
-        // 1. get user media
-        navigator.getUserMedia(
-            {audio: true, video: true},
-            function(stream) {
-                user_media = stream
+        // 1. get user media (this should happen right at the beginning)
+        if (user_media !== undefined) {
+            // 2. set state: broadcasting (with additional data: user_id)
+            wamp.session.publish("api:state_changed", [STATE.BROADCASTING],
+                                 {broadcaster: user_id},
+                                 {exclude_me: false})  // we'll receive too
+            success_callback(user_media)
 
-                // 2. set state: broadcasting (with additional data: user_id)
-                wamp.session.publish("api:state_changed", [STATE.BROADCASTING],
-                                     {broadcaster: user_id},
-                                     {exclude_me: false})  // we'll receive too
-                success_callback(user_media)
-
-                // 3. call students & instructors!
-                var call
-                for (var i = 0; i < students.length; i++) {
-                    console.log("Calling student:", students[i])
-                    call = peer.call(students[i], user_media,
-                                     {metadata: {mode: STATE.BROADCASTING}})
-                    active_calls[ students[i] ] = call
+            // 3. call students & instructors!
+            var call
+            for (var i = 0; i < students.length; i++) {
+                console.log("Calling student:", students[i])
+                call = peer.call(students[i], user_media,
+                                 {metadata: {mode: STATE.BROADCASTING}})
+                active_calls[ students[i] ] = call
+            }
+            for (var i = 0; i < instructors.length; i++) {
+                if (instructors[i] != user_id) {
+                    console.log("Calling instructor:", instructors[i])
+                    call = peer.call(instructors[i], user_media,
+                                    {metadata: {mode: STATE.BROADCASTING}})
+                    active_calls[ instructors[i] ] = call
                 }
-                for (var i = 0; i < instructors.length; i++) {
-                    if (instructors[i] != user_id) {
-                        console.log("Calling instructor:", instructors[i])
-                        call = peer.call(instructors[i], user_media,
-                                        {metadata: {mode: STATE.BROADCASTING}})
-                        active_calls[ instructors[i] ] = call
-                    }
-                }
-            },
-            error_callback
-        )
+            }
+        } else {
+            error_callback("Something went terribly wrong!")
+        }
 
         // 4. what about lost peers? What about late peers calling in?
         // someone joins / recalls, they simply publish api:call_me with their
@@ -300,15 +321,10 @@ PITT.Pitt = function(is_instructor) {
             console.log("Closing call with", active_calls[call].peer)
             active_calls[call].close()
         }
-        // 2. close media stream
-        if (user_media !== undefined) {
-            user_media.stop()
-            user_media == undefined
-        }
-        // 3. publish state change
+        // 2. publish state change
         wamp.session.publish("api:state_changed", [STATE.NOTHING], {},
                              {exclude_me: false})  // we'll receive it too
-        // 4. unsubscribe from "on_call_me" event
+        // 3. unsubscribe from "on_call_me" event
         wamp.session.unsubscribe(call_me_subscription)
         call_me_subscription = undefined
     }
@@ -367,8 +383,8 @@ PITT.Pitt = function(is_instructor) {
     var updateStudentsInRoom = function(students) {}
 
     INTERFACE.init = init
-    INTERFACE.connect_peer = connect_peer
-    INTERFACE.connect_wamp = connect_wamp
+    // INTERFACE.connect_peer = connect_peer
+    // INTERFACE.connect_wamp = connect_wamp
 
     INTERFACE.getUserId = function() {return user_id}
 

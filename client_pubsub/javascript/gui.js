@@ -4,6 +4,7 @@ GUI.GUI = function() {
     var INTERFACE = {}
     var user_id
 
+    user_stream = $("#user_stream")
     btn_start_split = $("#start_split_mode")
     btn_stop_split = $("#end_split_mode")
     btn_start_broadcast = $("#start_broadcasting")
@@ -43,9 +44,23 @@ GUI.GUI = function() {
 
     INTERFACE.init = function() {
         $("#user_id").text("Not connected")
+        stateChange(-1, {})
     }
 
-    INTERFACE.onStateChange = function(state, state_data) {
+    INTERFACE.media_access = function(stream) {
+        // at the beginning, users must agree to use their webcams and mikes
+        // when we have access to user's stream, we put it in the "main" place.
+        user_stream.prop("src", URL.createObjectURL(stream))
+    }
+
+    INTERFACE.media_error = function(error) {
+        // oooops, something went terribly wrong.  Can't gain access to user's
+        // webcam and/or mike.  This means application should simply quit
+        // loudly…
+        console.error("OH SHIT NO NO NO!!!")
+    }
+
+    var stateChange = function(state, state_data) {
         switch (state) {
             case STATE.NOTHING:
                 btn_start_split.attr("disabled", false)
@@ -99,6 +114,7 @@ GUI.GUI = function() {
                 div_countdown.hide()
         }
     }
+    INTERFACE.onStateChange = stateChange
 
     INTERFACE.onUpdateUserId = function(id) {
         user_id = id
