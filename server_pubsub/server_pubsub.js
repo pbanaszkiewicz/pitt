@@ -182,7 +182,7 @@ connection.onopen = function(session) {
     // this RPC command
     session.register("api:end_split_mode", function(args, kwargs, details) {
 
-        // can't end in a different mode than COUNTDOWN or SMALL_GROUPS
+        // can't end when in a different mode than COUNTDOWN or SMALL_GROUPS
         if (state != STATE.SMALL_GROUPS && state != STATE.COUNTDOWN) {
             throw new autobahn.Error("api:mode_change_error")
         }

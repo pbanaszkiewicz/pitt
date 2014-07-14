@@ -5,6 +5,7 @@ GUI.GUI = function() {
     var user_id
 
     user_stream = $("#user_stream")
+    main_stream = $("#main_stream")
     btn_start_split = $("#start_split_mode")
     btn_stop_split = $("#end_split_mode")
     btn_start_broadcast = $("#start_broadcasting")
@@ -44,7 +45,17 @@ GUI.GUI = function() {
 
     INTERFACE.init = function() {
         $("#user_id").text("Not connected")
+        // -1 is not defined, therefore will trigger `default` action
         stateChange(-1, {})
+
+        $("#user_stream").on("click", function(e) {
+            main_stream.prop("src", e.target.src)
+            main_stream.addClass("local-stream")
+        })
+        $("#remote_streams").on("click", "video", function(e) {
+            main_stream.prop("src", e.target.src)
+            main_stream.removeClass("local-stream")
+        })
     }
 
     INTERFACE.media_access = function(stream) {
@@ -69,7 +80,7 @@ GUI.GUI = function() {
                 btn_stop_broadcast.attr("disabled", true)
                 div_countdown.hide()
                 // we should clear streams when there's nothing to show
-                $("#local_stream").empty()
+                main_stream.prop("src", "")
                 $("#remote_streams").empty()
                 break
 
@@ -89,10 +100,10 @@ GUI.GUI = function() {
             case STATE.SMALL_GROUPS:
                 initializer = state_data.initializer
                 btn_start_split.attr("disabled", true)
-                // we want to prevent other instructors from ending
-                // groups discussions started by other instructor
-                btn_stop_split.attr("disabled",
-                                    initializer === user_id ? false : true)
+                // any instructor can end split mode
+                btn_stop_split.attr("disabled", false)
+                // btn_stop_split.attr("disabled",
+                //                     initializer === user_id ? false : true)
                 btn_start_broadcast.attr("disabled", true)
                 btn_stop_broadcast.attr("disabled", true)
                 div_countdown.hide()
@@ -134,9 +145,6 @@ GUI.GUI = function() {
             start_broadcast_callback(
                 function(stream) {
                     console.log("User media access granted")
-                    var src = URL.createObjectURL(stream)
-                    add_video_element("#local_stream", "video_" + user_id,
-                                      "local-stream original-size", src, true)
                 },
                 function(error) {
                     console.error("Can't access user media!", error)
@@ -157,7 +165,8 @@ GUI.GUI = function() {
         var src = URL.createObjectURL(stream)
         // 2. add the video somewhere
         add_video_element("#remote_streams", "video_" + call.peer,
-                          "remote-stream medium-size", src, false)
+                          "remote-stream medium-size video-thumbnail", src,
+                          false)
 
         // AM I CRAZY?! this might need to be moved out from here, back to
         // `pitt.js`

@@ -170,26 +170,47 @@ PITT.Pitt = function(is_instructor) {
                     peer_id)
         if (active_calls[peer_id] === undefined) {
             call = peer.call(peer_id, user_media,
-                             {metadata: {mode: STATE.BROADCASTING}})
+                             {metadata: {mode: state}})
             active_calls[peer_id] = call
         }
     }
 
     on_split_mode_enabled = function(args, kwargs, details) {
+        // only students subscribe to this event, right?
         var students_in_rooms = kwargs["students_in_rooms"]
         var rooms = kwargs["rooms"]
         var my_room = students_in_rooms[user_id]
-        console.log("Event: split_mode_enabled. I'm in the room", my_room)
         students_in_room = rooms[my_room]
+        console.log("Event: split_mode_enabled. I'm in the room", my_room,
+                    "with", students_in_room)
         updateStudentsInRoom(students_in_room)
 
         // call everyone
+        for (var i = 0; i < students_in_room.length; i++) {
+            var student = students_in_room[i]
+
+            if (active_calls[student] === undefined && student != user_id) {
+                console.log("Calling student (in room):", student)
+                call = peer.call(student, user_media,
+                                 {metadata: {mode: state}})
+                active_calls[peer_id] = call
+            }
+        }
     }
 
     on_split_mode_disabled = function(args, kwargs, details) {
+        // only students subscribe to this event, right?
         students_in_room = []
         console.log("Event: split_mode_disabled.")
         updateStudentsInRoom(students_in_room)
+
+        var calls_to_close = Object.keys(calls_in_room)
+        for (var i = 0; i < calls_to_close.length; i++) {
+            var call = calls_to_close[i]
+            console.log("Closing call with", call)
+            active_calls[call].close()
+            active_calls[call] = undefined
+        }
     }
 
     /***************
@@ -255,6 +276,11 @@ PITT.Pitt = function(is_instructor) {
                         // console.log("call stream event")
                         incomingCall(stream, call)
                     })
+                } else if (call.metadata.mode == STATE.SMALL_GROUPS) {
+                    call.answer(user_media)
+                    call.on("stream", function(stream) {
+                        incomingCall(stream, call)
+                    })
                 }
             })
         }
@@ -274,32 +300,30 @@ PITT.Pitt = function(is_instructor) {
     }
 
     var start_broadcast = function(success_callback, error_callback) {
-        // 1. get user media (this should happen right at the beginning)
-        if (user_media !== undefined) {
-            // 2. set state: broadcasting (with additional data: user_id)
-            wamp.session.publish("api:state_changed", [STATE.BROADCASTING],
-                                 {broadcaster: user_id},
-                                 {exclude_me: false})  // we'll receive too
-            success_callback(user_media)
+        // 1. get user media (this should happen right at the beginning), so
+        // lets ignore for now
 
-            // 3. call students & instructors!
-            var call
-            for (var i = 0; i < students.length; i++) {
-                console.log("Calling student:", students[i])
-                call = peer.call(students[i], user_media,
-                                 {metadata: {mode: STATE.BROADCASTING}})
-                active_calls[ students[i] ] = call
+        // 2. set state: broadcasting (with additional data: user_id)
+        wamp.session.publish("api:state_changed", [STATE.BROADCASTING],
+                             {broadcaster: user_id},
+                             {exclude_me: false})  // we'll receive too
+        success_callback(user_media)
+
+        // 3. call students & instructors!
+        var call
+        for (var i = 0; i < students.length; i++) {
+            console.log("Calling student:", students[i])
+            call = peer.call(students[i], user_media,
+                             {metadata: {mode: STATE.BROADCASTING}})
+            active_calls[ students[i] ] = call
+        }
+        for (var i = 0; i < instructors.length; i++) {
+            if (instructors[i] != user_id) {
+                console.log("Calling instructor:", instructors[i])
+                call = peer.call(instructors[i], user_media,
+                                {metadata: {mode: STATE.BROADCASTING}})
+                active_calls[ instructors[i] ] = call
             }
-            for (var i = 0; i < instructors.length; i++) {
-                if (instructors[i] != user_id) {
-                    console.log("Calling instructor:", instructors[i])
-                    call = peer.call(instructors[i], user_media,
-                                    {metadata: {mode: STATE.BROADCASTING}})
-                    active_calls[ instructors[i] ] = call
-                }
-            }
-        } else {
-            error_callback("Something went terribly wrong!")
         }
 
         // 4. what about lost peers? What about late peers calling in?
@@ -359,18 +383,17 @@ PITT.Pitt = function(is_instructor) {
     }
 
     var stop_split_mode = function() {
-        if (state_data.initializer == user_id) {
-            wamp.session.call("api:end_split_mode").then(
-                function(success) {
-                    console.log("Split mode has been disabled")
-                    wamp.session.publish("api:state_changed", [STATE.NOTHING],
-                                         {}, {exclude_me: false})
-                },
-                function(error) {
-                    console.error("Split mode end ERROR!", error, error.error)
-                }
-            )
-        }
+        // any instructor can end the split mode
+        wamp.session.call("api:end_split_mode").then(
+            function(success) {
+                console.log("Split mode has been disabled")
+                wamp.session.publish("api:state_changed", [STATE.NOTHING],
+                                     {}, {exclude_me: false})
+            },
+            function(error) {
+                console.error("Split mode end ERROR!", error, error.error)
+            }
+        )
     }
 
     var countdown = function () {}

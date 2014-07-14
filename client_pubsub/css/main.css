@@ -9,6 +9,7 @@
 .local-stream   {transform: rotateY(180deg); border: 3px solid green;}
 .remote-stream  {/*transform: rotateY(180deg);*/ border: 3px solid red;}
 .teacher-stream {/*transform: rotateY(180deg);*/ border: 3px solid red;}
+.video-thumbnail {cursor: pointer;}
 
 .original-size {width: 640px; height: 480px;}
 .medium-size   {width: 320px; height: 240px;}
