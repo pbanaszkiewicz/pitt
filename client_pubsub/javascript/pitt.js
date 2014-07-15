@@ -128,32 +128,51 @@ PITT.Pitt = function(is_instructor) {
     on_new_student = function(args, kwargs, details) {
         console.log("Event: new_student")
 
-        idx = students.indexOf(kwargs["user_id"])
-        if (idx == -1)
+        index = students.indexOf(kwargs["user_id"])
+        if (index == -1)
             students.push(kwargs["user_id"])
         else
             console.log("Student already on the list!")
         updateStudents(students)
     }
+
     on_student_gone = function(args, kwargs, details) {
         console.log("Event: student_gone")
-        idx = students.indexOf(kwargs["user_id"])
-        if (idx != -1) students.splice(idx, 1)
+
+        var student_id = kwargs["user_id"]
+        index = students.indexOf(student_id)
+        if (index != -1) students.splice(index, 1)
+
         updateStudents(students)
+
+        // if we're in SMALL_GROUPS mode, let's find out if the student had
+        // a call with us
+        if (state == STATE.SMALL_GROUPS && student_id in active_calls) {
+            active_calls[student_id].close()
+            active_calls[student_id] = undefined
+            droppedCall(student_id)
+        }
+        if (state == STATE.SMALL_GROUPS &&
+            students_in_room.indexOf(student_id) !== -1) {
+            students_in_room.splice(index, 1)
+            updateStudentsInRoom(students_in_room)
+        }
     }
+
     on_new_instructor = function(args, kwargs, details) {
         console.log("Event: new_instructor")
-        idx = instructors.indexOf(kwargs["user_id"])
-        if (idx == -1)
+        index = instructors.indexOf(kwargs["user_id"])
+        if (index == -1)
             instructors.push(kwargs["user_id"])
         else
             console.log("Instructor already on the list!")
         updateInstructors(instructors)
     }
+
     on_instructor_gone = function(args, kwargs, details) {
         console.log("Event: instructor_gone")
-        idx = instructors.indexOf(kwargs["user_id"])
-        if (idx != -1) instructors.splice(idx, 1)
+        index = instructors.indexOf(kwargs["user_id"])
+        if (index != -1) instructors.splice(index, 1)
         updateInstructors(instructors)
     }
 

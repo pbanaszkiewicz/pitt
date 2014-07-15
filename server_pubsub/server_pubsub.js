@@ -38,6 +38,24 @@ var STATE = {
 var state = STATE.NOTHING
 var state_data = {}
 
+// this is a utility function, maybe in the future this should be moved to
+// a separate module?
+var shortest_array_in_set = function(set) {
+    // find shortest array in the set, ie. object like:
+    // {"a": [1, 2, 3], "b": [1, 2], "c": [1, 2, 3, 4]}
+    // the shortest is "b" with length of 2
+    var names = Object.keys(set)
+    var min = set[ names[0] ].length
+    var min_room = names[0]
+    for (var i = 0; i < names.length; i++) {
+        if (set[ names[i] ].length < min) {
+            min = set[ names[i] ].length
+            min_room = names[i]
+        }
+    }
+    return min_room
+}
+
 connection.onopen = function(session) {
     console.log("Autobahn connection opened.")
 
@@ -57,24 +75,58 @@ connection.onopen = function(session) {
     session.subscribe("api:student_gone", function(args, kwargs, details) {
         console.log("Event: student_gone")
 
+        var student_id = kwargs["user_id"]
+
         // remove 1 element starting at index of the leaving user
-        index = students.indexOf(kwargs["user_id"])
+        index = students.indexOf(student_id)
         if (index != -1) students.splice(index, 1)
 
         // TODO: if STATE.SMALL_GROUPS, remove the student from `rooms` and
         //       from `students_rooms`...
+        if (state == STATE.SMALL_GROUPS && student_id in students_rooms) {
+            var room = students_rooms[student_id]
+
+            // remove from students <-> rooms relationship table
+            delete students_rooms[student_id]
+
+            // remove from the room
+            index = rooms[room].indexOf(student_id)
+            if (index != -1) rooms[room].splice(index, 1)
+
+            // if there's only 1 peer within the room, let's put them
+            // somewhere else (a different room)
+            if (rooms[room].length == 1) {
+                lone_student = rooms[room].pop()
+                delete rooms[room]
+
+                // TODO: show notification for ~10s and then switch rooms?
+
+                // we choose to switch the user to the least crowded room
+                // DON'T run this on the set of rooms that include `room`,
+                // because most probably that's the shortest one
+                var min_room = shortest_array_in_set(rooms)
+                rooms[min_room].push(lone_student)
+                students_rooms[lone_student] = min_room
+
+                // TODO: `call_me` within the new room
+            }
+        }
     })
 
-    // when a new instructor arrives, add them to the array and redraw DOM list
-    session.subscribe("api:new_instructor", function(args, kwargs, details) {
+    // when a new instructor arrives, add them to the array and redraw DOM
+    // list
+    session.subscribe("api:new_instructor", function(args, kwargs,
+                                                     details) {
         console.log("Event: new_instructor")
         index = instructors.indexOf(kwargs["user_id"])
         if (index == -1)
             instructors.push(kwargs["user_id"])
     })
 
-    // when instructor leaves, remove them from the array and redraw DOM list
-    session.subscribe("api:instructor_gone", function(args, kwargs, details) {
+    // when instructor leaves, remove them from the array and redraw DOM
+    // list
+    session.subscribe("api:instructor_gone", function(args, kwargs,
+                                                      details) {
         console.log("Event: instructor_gone")
 
         id = kwargs["user_id"]
@@ -86,13 +138,14 @@ connection.onopen = function(session) {
         // corner case: broadcaster's leaving without changing state
         if (state == STATE.BROADCASTING && state_data.broadcaster == id) {
             session.publish("api:state_changed", [STATE.NOTHING], {},
-                            {exclude_me: false})  // let the server receive it,
-                                                  // too
+                            {exclude_me: false})  // let the server receive
+                                                  // it, too
         }
     })
 
     // simple RPC for newcomers
-    session.register("api:get_current_state", function(args, kwargs, details) {
+    session.register("api:get_current_state", function(args, kwargs,
+                                                       details) {
         console.log("Event: receive application's current state")
 
         if (state == STATE.SMALL_GROUPS || state == STATE.COUNTDOWN) {
@@ -102,15 +155,7 @@ connection.onopen = function(session) {
                 students_rooms[user_id] == undefined) {
 
                 // let's put them in the room with lowest number of students
-                var room_names = Object.keys(rooms)
-                var min = rooms[ room_names[0] ].length
-                var min_room = room_names[0]
-                for (var i = 0; i < room_names.length; i++) {
-                    if (rooms[ room_names[i] ].length < min) {
-                        min = rooms[ room_names[i] ].length
-                        min_room = room_names[i]
-                    }
-                }
+                var min_room = shortest_array_in_set(rooms)
 
                 state_data["join_room"] = min_room
             }
@@ -134,13 +179,14 @@ connection.onopen = function(session) {
 
     // first step to split students into smaller groups is to initialize
     // split-mode - via this RPC command
-    session.register("api:init_split_mode", function(args, kwargs, details) {
-        // in worst case (odd number of students) there's one student without
-        // peers
+    session.register("api:init_split_mode", function(args, kwargs,
+                                                     details) {
+        // in worst case (odd number of students) there's one student
+        // without peers
         var students_per_room = parseInt(kwargs["size"] || 2, 10)
 
-        console.log("Event: some instructor initialized split mode with the" +
-                    " size of", students_per_room)
+        console.log("Event: some instructor initialized split mode with" +
+                    " the size of", students_per_room)
 
         // first the state needs to change, then we can initialize the split
         if (state != STATE.SMALL_GROUPS) {
@@ -156,8 +202,8 @@ connection.onopen = function(session) {
         // so let's fix the split size to be equal to the number of students
         if (students_count <= students_per_room) {
             students_per_room = students_count
-            console.log("There's too few students to split into more than " +
-                        "one group.  The split size was changed.")
+            console.log("There's too few students to split into more" +
+                        " than one group.  The split size was changed.")
         }
 
         // put students into rooms
@@ -223,7 +269,8 @@ connection.onopen = function(session) {
         return state
     })
 
-    // students willing to get information about their room call this procedure
+    // students willing to get information about their room call this
+    // procedure
     // DEPRECATED
     session.register("api:get_room_information",
         function(args, kwargs, details) {
