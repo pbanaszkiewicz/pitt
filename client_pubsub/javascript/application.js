@@ -71,7 +71,8 @@ function run_countdown(main_el, time_el, time, callback) {
     if (time > 0) {
         $(main_el).show()
         $(time_el).text(time)
-        window.setTimeout(run_countdown, 1000, main_el, time_el, time - 1, callback)
+        window.setTimeout(run_countdown, 1000, main_el, time_el, time - 1,
+                          callback)
     } else {
         $(main_el).hide()
         callback()

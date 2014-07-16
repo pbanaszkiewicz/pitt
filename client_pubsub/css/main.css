@@ -6,7 +6,8 @@
 }
 
 /* Only local stream should be rotated. Don't fool other people. */
-.local-stream   {transform: rotateY(180deg); border: 3px solid green;}
+.local-stream   {transform: rotateY(180deg); -webkit-transform: rotateY(180deg);
+                                                 border: 3px solid green;}
 .remote-stream  {/*transform: rotateY(180deg);*/ border: 3px solid red;}
 .teacher-stream {/*transform: rotateY(180deg);*/ border: 3px solid red;}
 .video-thumbnail {cursor: pointer;}

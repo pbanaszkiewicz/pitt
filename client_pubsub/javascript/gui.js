@@ -11,6 +11,7 @@ GUI.GUI = function() {
     btn_start_broadcast = $("#start_broadcasting")
     btn_stop_broadcast = $("#stop_broadcasting")
     div_countdown = $("#countdown_container")
+    counter = $("#split_countdown")
 
     var redraw_list = function(element, list, omitted_element) {
         // not every browser supports default arguments in JavaScript, so these
@@ -68,6 +69,7 @@ GUI.GUI = function() {
         // oooops, something went terribly wrong.  Can't gain access to user's
         // webcam and/or mike.  This means application should simply quit
         // loudly…
+        // idea:
         console.error("OH SHIT NO NO NO!!!")
     }
 
@@ -184,12 +186,18 @@ GUI.GUI = function() {
 
     INTERFACE.onBackToBroadcast = function(countdown_callb, stop_split_callb) {
         btn_stop_split.click(function() {
-            stop_split_callb()
+            countdown_callb(30)
+            // stop_split_callb()
         })
     }
 
     INTERFACE.onUpdateStudentsInRoom = function(students) {
         redraw_list("#room_peers_list", students, user_id)
+    }
+
+    INTERFACE.onUpdateCountdown = function(time) {
+        console.log("Counting down: ", time)
+        counter.text(time)
     }
 
     return INTERFACE

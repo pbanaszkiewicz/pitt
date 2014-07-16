@@ -120,6 +120,8 @@ PITT.Pitt = function(is_instructor) {
             session.subscribe("api:split_mode_disabled",
                               on_split_mode_disabled)
         }
+
+        session.subscribe("api:counting_down", on_counting_down)
     }
     wamp.onclose = function(reason, details) {
         console.error("WAMP connection ERROR!", reason, details)
@@ -286,6 +288,14 @@ PITT.Pitt = function(is_instructor) {
         }
         active_calls = {}
         room_id = undefined
+    }
+
+    on_counting_down = function(args, kwargs, details) {
+        // the server counts down from, e.g., 30
+        // so we receive this publication every second and want to update our
+        // counter
+        var time = args[0]
+        updateCountdown(time)
     }
 
     /***************
@@ -472,7 +482,21 @@ PITT.Pitt = function(is_instructor) {
         )
     }
 
-    var countdown = function () {}
+    var countdown = function(countdown_time) {
+        wamp.session.publish("api:state_changed", [STATE.COUNTDOWN],
+                             {initializer: user_id},
+                             {exclude_me: false})
+
+        wamp.session.call("api:start_counting_down", [countdown_time]).then(
+            function(success) {
+                console.log("Initiated countdown")
+            },
+            function(error) {
+                console.error("Countdown initialization ERROR!", error,
+                              error.error)
+            }
+        )
+    }
 
     var updateUserId = function(id) {}
     var updateStudents = function(students) {}
@@ -481,6 +505,7 @@ PITT.Pitt = function(is_instructor) {
     var incomingCall = function(stream, call) {}
     var droppedCall = function(peer_id, reason) {}
     var updateStudentsInRoom = function(students) {}
+    var updateCountdown = function(t) {}
 
     INTERFACE.init = init
     // INTERFACE.connect_peer = connect_peer
@@ -495,6 +520,7 @@ PITT.Pitt = function(is_instructor) {
     INTERFACE.onIncomingCall = function(_c) {incomingCall = _c}
     INTERFACE.onDroppedCall = function(_c) {droppedCall = _c}
     INTERFACE.onUpdateStudentsInRoom = function(_c) {updateStudentsInRoom = _c}
+    INTERFACE.onUpdateCountdown = function(_c) {updateCountdown = _c}
 
     INTERFACE.start_broadcast = start_broadcast
     INTERFACE.stop_broadcast = stop_broadcast

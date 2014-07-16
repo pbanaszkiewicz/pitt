@@ -148,7 +148,9 @@ connection.onopen = function(session) {
                                                        details) {
         console.log("Event: receive application's current state")
 
-        if (state == STATE.SMALL_GROUPS || state == STATE.COUNTDOWN) {
+        if (state == STATE.SMALL_GROUPS) {
+            // TODO: check if there's any room to join!
+
             // select a room for that newcomer
             var user_id = kwargs["user_id"]
             if (students.indexOf(user_id) !== -1 &&
@@ -282,6 +284,33 @@ connection.onopen = function(session) {
             else return false;
         }
     )
+
+    session.register("api:start_counting_down", function(args, kwargs,
+                     details) {
+
+        var callback = function(time) {
+            console.log("Counting down: ", time)
+            if (time > 0) {
+                session.publish("api:counting_down", [time])
+                setTimeout(callback, 1000, time - 1)
+            } else if (time == 0) {
+                // let's mimic instructor's browser behavior
+                session.call("api:end_split_mode").then(
+                    function(success) {
+                        console.log("Split mode has been disabled")
+                        session.publish("api:state_changed",
+                                             [STATE.NOTHING],
+                                             {}, {exclude_me: false})
+                    },
+                    function(error) {
+                        console.error("Split mode end ERROR!", error,
+                                      error.error)
+                    }
+                )
+            }
+        }
+        callback(args[0])
+    })
 }
 
 console.log("Server listening on http://localhost:9001/")
