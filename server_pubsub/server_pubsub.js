@@ -93,6 +93,8 @@ connection.onopen = function(session) {
             index = rooms[room].indexOf(student_id)
             if (index != -1) rooms[room].splice(index, 1)
 
+            console.log("Student removed from `rooms` and `students_rooms`")
+
             // if there's only 1 peer within the room, let's put them
             // somewhere else (a different room)
             if (rooms[room].length == 1) {
@@ -105,10 +107,17 @@ connection.onopen = function(session) {
                 // DON'T run this on the set of rooms that include `room`,
                 // because most probably that's the shortest one
                 var min_room = shortest_array_in_set(rooms)
+
+                console.log("Moving lone student from room", room,
+                            "to room", min_room)
+
                 rooms[min_room].push(lone_student)
                 students_rooms[lone_student] = min_room
 
-                // TODO: `call_me` within the new room
+                // asking peers in the existing room to call the incoming
+                // student on student's behalf
+                session.publish("api:call_me", [lone_student, min_room])
+                console.log("Called in on student's behalf")
             }
         }
     })

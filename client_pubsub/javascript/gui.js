@@ -186,7 +186,7 @@ GUI.GUI = function() {
 
     INTERFACE.onBackToBroadcast = function(countdown_callb, stop_split_callb) {
         btn_stop_split.click(function() {
-            countdown_callb(30)
+            countdown_callb(15)
             // stop_split_callb()
         })
     }

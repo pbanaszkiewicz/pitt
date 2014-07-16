@@ -80,7 +80,7 @@ PITT.Pitt = function(is_instructor) {
                 if (state == STATE.BROADCASTING) {
                     console.log("Asking the broadcaster to call me")
                     session.publish("api:call_me", [user_id])
-                } else if (state == STATE.SMALL_GROUPS) {
+                } else if (state == STATE.SMALL_GROUPS && student) {
                     // the server has given a room to join, so let's ask the
                     // peers in that room to call us
                     console.log("Asking peers in the room to call me")
@@ -159,6 +159,19 @@ PITT.Pitt = function(is_instructor) {
             students_in_room.splice(index, 1)
             updateStudentsInRoom(students_in_room)
         }
+
+        session.call("api:get_current_state", [], {user_id: user_id}).then(
+            function(result) {
+                students = result.students
+                instructors = result.instructors
+                state = result.state
+                state_data = result.state_data
+
+                updateStudents(students)
+                updateInstructors(instructors)
+                updateState(state, state_data)
+            }
+        )
     }
 
     on_new_instructor = function(args, kwargs, details) {
@@ -234,42 +247,26 @@ PITT.Pitt = function(is_instructor) {
                     "with", students_in_room)
         updateStudentsInRoom(students_in_room)
 
-        // call everyone
-        for (var i = 0; i < students_in_room.length; i++) {
-            var student = students_in_room[i]
-
-            if (active_calls[student] === undefined && student != user_id) {
-                console.log("Calling student (in room):", student)
-                call = peer.call(student, user_media,
-                                 {metadata: {mode: state}})
-                active_calls[peer_id] = call
-
-                call.on("stream", function(stream) {
-                    console.log("Someone just answered my call!")
-                    incomingCall(stream, call)
-                })
-                call.on("close", function() {
-                    console.log("PeerJS MediaConnection closed, call with:",
-                                call.peer)
-                    droppedCall(call.peer)
-                })
-                call.on("error", function(error) {
-                    console.error("PeerJS MediaConnection ERROR!", error)
-                    droppedCall(call.peer, error)
-                })
-            }
-        }
-
         // What about lost peers? What about late peers calling in?
         // Someone joins / recalls, they simply publish api:call_me with their
         // peer ID and room # and this peer calls them back.
         // `call_me_subscription` is required to unsubscribe in the
         // `on_split_mode_disabled` method
-        wamp.session.subscribe("api:call_me", on_call_me).then(
+
+        wamp.session.subscribe("api:call_me_" + my_room, on_call_me).then(
             function(subscription) {
+                console.log("Subscribed to api:call_me_" + my_room)
                 call_me_subscription = subscription
+            },
+            function(error) {
+                console.error("Couldn't subscribe to api:call_me_" + my_room,
+                              error)
             }
         )
+
+        // switch to "call on demand" model from "calling everyone and
+        // throwing race conditions everywhere"
+        wamp.session.publish("api:call_me_" + my_room, [user_id, my_room])
     }
 
     on_split_mode_disabled = function(args, kwargs, details) {
@@ -279,7 +276,7 @@ PITT.Pitt = function(is_instructor) {
         updateStudentsInRoom(students_in_room)
 
         // close all the calls
-        var calls_to_close = Object.keys(calls_in_room)
+        var calls_to_close = Object.keys(active_calls)
         for (var i = 0; i < calls_to_close.length; i++) {
             var call = calls_to_close[i]
             console.log("Closing call with", call)
@@ -288,6 +285,10 @@ PITT.Pitt = function(is_instructor) {
         }
         active_calls = {}
         room_id = undefined
+
+        wamp.session.unsubscribe(call_me_subscription)
+        call_me_subscription = undefined
+        console.log("Unsubscribed from api:call_me (maybe with `_roomN`)")
     }
 
     on_counting_down = function(args, kwargs, details) {
@@ -362,11 +363,18 @@ PITT.Pitt = function(is_instructor) {
                         incomingCall(stream, call)
                     })
                 } else if (call.metadata.mode == STATE.SMALL_GROUPS) {
-                    call.answer(user_media)
-                    call.on("stream", function(stream) {
-                        console.log("call stream event (SMALL_GROUPS)")
-                        incomingCall(stream, call)
-                    })
+                    // answer only if we don't have the connection with that
+                    // peer yet
+                    if (active_calls[call.peer] === undefined) {
+                        call.answer(user_media)
+                        active_calls[call.peer] = call
+                        call.on("stream", function(stream) {
+                            if (active_calls[call.peer] !== undefined) {
+                                console.log("call stream event (SMALL_GROUPS)")
+                                incomingCall(stream, call)
+                            }
+                        })
+                    }
                 }
             })
         }
@@ -425,9 +433,9 @@ PITT.Pitt = function(is_instructor) {
     }
     var stop_broadcast = function() {
         // 1. disconnect all connected peers
-        calls_to_close = Object.keys(active_calls)
+        var calls_to_close = Object.keys(active_calls)
         for (var i = 0; i < calls_to_close.length; i++) {
-            call = calls_to_close[i]
+            var call = calls_to_close[i]
             console.log("Closing call with", active_calls[call].peer)
             active_calls[call].close()
         }
