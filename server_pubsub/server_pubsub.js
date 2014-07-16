@@ -81,8 +81,8 @@ connection.onopen = function(session) {
         index = students.indexOf(student_id)
         if (index != -1) students.splice(index, 1)
 
-        // TODO: if STATE.SMALL_GROUPS, remove the student from `rooms` and
-        //       from `students_rooms`...
+        // if STATE.SMALL_GROUPS, remove the student from `rooms` and from
+        // `students_rooms`...
         if (state == STATE.SMALL_GROUPS && student_id in students_rooms) {
             var room = students_rooms[student_id]
 
@@ -116,8 +116,18 @@ connection.onopen = function(session) {
 
                 // asking peers in the existing room to call the incoming
                 // student on student's behalf
-                session.publish("api:call_me", [lone_student, min_room])
+                session.publish("api:call_me_" + min_room,
+                                [lone_student, min_room])
                 console.log("Called in on student's behalf")
+
+                // let know all the users that something has changed
+                session.publish(
+                    "api:rooms_update", [],
+                    {
+                        rooms: rooms,
+                        students_in_rooms: students_rooms
+                    }
+                )
             }
         }
     })
@@ -158,17 +168,37 @@ connection.onopen = function(session) {
         console.log("Event: receive application's current state")
 
         if (state == STATE.SMALL_GROUPS) {
-            // TODO: check if there's any room to join!
-
             // select a room for that newcomer
             var user_id = kwargs["user_id"]
             if (students.indexOf(user_id) !== -1 &&
                 students_rooms[user_id] == undefined) {
 
-                // let's put them in the room with lowest number of students
-                var min_room = shortest_array_in_set(rooms)
+                if (Object.keys(rooms).length == 0) {
+                    // there aren't any rooms, so create a new one
+                    var new_room = "room0"
 
-                state_data["join_room"] = min_room
+                    state_data["join_room"] = new_room
+
+                    rooms[new_room] = [user_id]
+                    students_rooms[user_id] = new_room
+                } else {
+                    // let's put them in the room with lowest number of
+                    // students
+                    var min_room = shortest_array_in_set(rooms)
+                    state_data["join_room"] = min_room
+
+                    rooms[min_room].push(user_id)
+                    students_rooms[user_id] = min_room
+                }
+
+                // let everyone know that rooms attendees have changed
+                session.publish(
+                    "api:rooms_update", [],
+                    {
+                        rooms: rooms,
+                        students_in_rooms: students_rooms
+                    }
+                )
             }
         } else {
             state_data["join_room"] = undefined

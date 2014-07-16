@@ -83,9 +83,13 @@ PITT.Pitt = function(is_instructor) {
                 } else if (state == STATE.SMALL_GROUPS && student) {
                     // the server has given a room to join, so let's ask the
                     // peers in that room to call us
+                    var join_room = state_data["join_room"]
                     console.log("Asking peers in the room to call me")
-                    session.publish("api:call_me", [user_id,
-                                    state_data["join_room"]])
+
+                    session.publish("api:call_me_" + join_room, [user_id,
+                                    join_room])
+
+                    room_id = join_room
                 } else if (state == STATE.COUNTDOWN) {
                     // show the countdown? Call in before that?
                 }
@@ -119,6 +123,11 @@ PITT.Pitt = function(is_instructor) {
             // or stopped
             session.subscribe("api:split_mode_disabled",
                               on_split_mode_disabled)
+
+            // whenever any room's occupation changes or whenever students
+            // are moved between rooms while in STATE.SMALL_GROUPS, update
+            // the list of students in the same room and the list of rooms
+            session.subscribe("api:rooms_update", on_rooms_update)
         }
 
         session.subscribe("api:counting_down", on_counting_down)
@@ -159,19 +168,6 @@ PITT.Pitt = function(is_instructor) {
             students_in_room.splice(index, 1)
             updateStudentsInRoom(students_in_room)
         }
-
-        session.call("api:get_current_state", [], {user_id: user_id}).then(
-            function(result) {
-                students = result.students
-                instructors = result.instructors
-                state = result.state
-                state_data = result.state_data
-
-                updateStudents(students)
-                updateInstructors(instructors)
-                updateState(state, state_data)
-            }
-        )
     }
 
     on_new_instructor = function(args, kwargs, details) {
@@ -297,6 +293,18 @@ PITT.Pitt = function(is_instructor) {
         // counter
         var time = args[0]
         updateCountdown(time)
+    }
+
+    on_rooms_update = function(args, kwargs, details) {
+        var students_in_rooms = kwargs["students_in_rooms"]
+        var rooms = kwargs["rooms"]
+        var my_room = students_in_rooms[user_id]
+        room_id = my_room
+
+        students_in_room = rooms[my_room]
+        console.log("Event: rooms update. I'm in the room", my_room,
+                    "with", students_in_room)
+        updateStudentsInRoom(students_in_room)
     }
 
     /***************
