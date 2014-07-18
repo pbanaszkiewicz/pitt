@@ -2,16 +2,54 @@ var GUI = GUI || {}
 
 GUI.GUI = function() {
     var INTERFACE = {}
-    var user_id
+    var user_id  // ID generated from PeerJS by PeerServer
 
-    user_stream = $("#user_stream")
-    main_stream = $("#main_stream")
-    btn_start_split = $("#start_split_mode")
-    btn_stop_split = $("#end_split_mode")
-    btn_start_broadcast = $("#start_broadcasting")
-    btn_stop_broadcast = $("#stop_broadcasting")
-    div_countdown = $("#countdown_container")
-    counter = $("#split_countdown")
+    var audio_ctx  // general audio context instance
+    var gain  // lower beep volume by using this gain
+
+    var user_stream = $("#user_stream")
+    var main_stream = $("#main_stream")
+    var btn_start_split = $("#start_split_mode")
+    var btn_stop_split = $("#end_split_mode")
+    var btn_start_broadcast = $("#start_broadcasting")
+    var btn_stop_broadcast = $("#stop_broadcasting")
+    var div_countdown = $("#countdown_container")
+    var counter = $("#split_countdown")
+
+    // var create_sound = function(frequency, next_node) {
+    //     osc = audio_ctx.createOscillator()
+
+    //     // oscillator has to be the first node in graph
+    //     // next node should be either destination or some effect node
+    //     if (next_node !== undefined) {
+    //         osc.connect(next_node)
+    //     }
+
+    //     // "sine", "square", "sawtooth", "triangle"
+    //     osc.type = "sine"
+    //     osc.frequency.value = frequency
+
+    //     return osc
+    // }
+
+    var play_sound = function(frequency, interval, next_node) {
+        // play the sound for given time (interval, ms)
+        var beep = audio_ctx.createOscillator()
+        beep.frequency.value = frequency
+
+        if (next_node !== undefined) {
+            beep.connect(next_node)
+        }
+
+        beep.start()
+        setTimeout(
+            function(osc) {
+                osc.stop()
+            },
+            interval,
+            beep
+        )
+    }
 
     var redraw_list = function(element, list, omitted_element) {
         // not every browser supports default arguments in JavaScript, so these
@@ -57,6 +95,11 @@ GUI.GUI = function() {
             main_stream.prop("src", e.target.src)
             main_stream.removeClass("local-stream")
         })
+
+        audio_ctx = new window.AudioContext()
+        gain = audio_ctx.createGain()
+        gain.gain.value = 0.5
+        gain.connect(audio_ctx.destination)
     }
 
     INTERFACE.media_access = function(stream) {
@@ -186,7 +229,7 @@ GUI.GUI = function() {
 
     INTERFACE.onBackToBroadcast = function(countdown_callb, stop_split_callb) {
         btn_stop_split.click(function() {
-            countdown_callb(15)
+            countdown_callb(30)
             // stop_split_callb()
         })
     }
@@ -198,6 +241,10 @@ GUI.GUI = function() {
     INTERFACE.onUpdateCountdown = function(time) {
         console.log("Counting down: ", time)
         counter.text(time)
+        if (time % 10 == 0 || time <= 5) {
+            console.log("beeping")
+            play_sound(440, 500, gain)
+        }
     }
 
     return INTERFACE

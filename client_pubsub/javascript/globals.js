@@ -17,3 +17,7 @@ var DEBUG = 2;  // used by PeerJS
 navigator.getUserMedia = navigator.getUserMedia ||
                          navigator.webkitGetUserMedia ||
                          navigator.mozGetUserMedia
+
+// just as simple hack to remove unnecessary prefixes from Audio API
+window.AudioContext = window.AudioContext ||
+                      window.webkitAudioContext
