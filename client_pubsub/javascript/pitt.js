@@ -322,7 +322,18 @@ PITT.Pitt = function(is_instructor) {
                 peer = new Peer({
                     host: "/",  // the same as window.location.hostname
                     port: 9000,
-                    debug: DEBUG || 2
+                    debug: DEBUG || 2,
+                    config: {"iceServers": [
+                        // our very own rfc5766 STUN&TURN server
+                        {
+                            url: "turn:patchculture.org:3478",
+                            username: "peer",
+                            credential: "peerinstruction"
+                        },
+                        {
+                            url: "stun:stun.l.google.com:19302"
+                        }
+                    ]}
                 })
 
                 connect_peer()
