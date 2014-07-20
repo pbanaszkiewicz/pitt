@@ -379,7 +379,10 @@ connection.onopen = function(session) {
         PING_BACKS.push(name)
     })
 
-    ping_interval = setInterval(ping_fnc, PING_TIMEOUT * 1000, session)
+    // proceed only if we agreed on using PINGs
+    if (PING === true) {
+        ping_interval = setInterval(ping_fnc, PING_TIMEOUT * 1000, session)
+    }
 }
 
 var ping_fnc = function(session) {
