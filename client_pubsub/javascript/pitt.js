@@ -131,6 +131,8 @@ PITT.Pitt = function(is_instructor) {
         }
 
         session.subscribe("api:counting_down", on_counting_down)
+
+        session.subscribe("api:ping", on_ping)
     }
     wamp.onclose = function(reason, details) {
         console.error("WAMP connection ERROR!", reason, details)
@@ -139,7 +141,7 @@ PITT.Pitt = function(is_instructor) {
     on_new_student = function(args, kwargs, details) {
         console.log("Event: new_student")
 
-        index = students.indexOf(kwargs["user_id"])
+        var index = students.indexOf(kwargs["user_id"])
         if (index == -1)
             students.push(kwargs["user_id"])
         else
@@ -151,7 +153,7 @@ PITT.Pitt = function(is_instructor) {
         console.log("Event: student_gone")
 
         var student_id = kwargs["user_id"]
-        index = students.indexOf(student_id)
+        var index = students.indexOf(student_id)
         if (index != -1) students.splice(index, 1)
 
         updateStudents(students)
@@ -172,7 +174,7 @@ PITT.Pitt = function(is_instructor) {
 
     on_new_instructor = function(args, kwargs, details) {
         console.log("Event: new_instructor")
-        index = instructors.indexOf(kwargs["user_id"])
+        var index = instructors.indexOf(kwargs["user_id"])
         if (index == -1)
             instructors.push(kwargs["user_id"])
         else
@@ -182,7 +184,7 @@ PITT.Pitt = function(is_instructor) {
 
     on_instructor_gone = function(args, kwargs, details) {
         console.log("Event: instructor_gone")
-        index = instructors.indexOf(kwargs["user_id"])
+        var index = instructors.indexOf(kwargs["user_id"])
         if (index != -1) instructors.splice(index, 1)
         updateInstructors(instructors)
     }
@@ -305,6 +307,13 @@ PITT.Pitt = function(is_instructor) {
         console.log("Event: rooms update. I'm in the room", my_room,
                     "with", students_in_room)
         updateStudentsInRoom(students_in_room)
+    }
+
+    on_ping = function(args, kwargs, details) {
+        // we need to answer this ping ASAP
+        console.log("Pinged by the server")
+        wamp.session.call("api:pong", [user_id])
+        console.log("Ponged back")
     }
 
     /***************

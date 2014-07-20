@@ -74,7 +74,7 @@ connection.onopen = function(session) {
     // when a new student arrives, add them to the array and redraw DOM list
     session.subscribe("api:new_student", function(args, kwargs, details) {
         console.log("Event: new_student")
-        index = students.indexOf(kwargs["user_id"])
+        var index = students.indexOf(kwargs["user_id"])
         if (index == -1)
             students.push(kwargs["user_id"])
     })
@@ -86,7 +86,7 @@ connection.onopen = function(session) {
         var student_id = kwargs["user_id"]
 
         // remove 1 element starting at index of the leaving user
-        index = students.indexOf(student_id)
+        var index = students.indexOf(student_id)
         if (index != -1) students.splice(index, 1)
 
         // if STATE.SMALL_GROUPS, remove the student from `rooms` and from
@@ -98,7 +98,7 @@ connection.onopen = function(session) {
             delete students_rooms[student_id]
 
             // remove from the room
-            index = rooms[room].indexOf(student_id)
+            var index = rooms[room].indexOf(student_id)
             if (index != -1) rooms[room].splice(index, 1)
 
             console.log("Student removed from `rooms` and `students_rooms`")
@@ -145,7 +145,7 @@ connection.onopen = function(session) {
     session.subscribe("api:new_instructor", function(args, kwargs,
                                                      details) {
         console.log("Event: new_instructor")
-        index = instructors.indexOf(kwargs["user_id"])
+        var index = instructors.indexOf(kwargs["user_id"])
         if (index == -1)
             instructors.push(kwargs["user_id"])
     })
@@ -159,7 +159,7 @@ connection.onopen = function(session) {
         id = kwargs["user_id"]
 
         // remove 1 element starting at index of the leaving user
-        index = instructors.indexOf(id)
+        var index = instructors.indexOf(id)
         if (index != -1) instructors.splice(index, 1)
 
         // corner case: broadcaster's leaving without changing state
@@ -372,15 +372,58 @@ connection.onopen = function(session) {
         }
         callback(args[0])
     })
+
+    session.register("api:pong", function(args, kwargs, details) {
+        console.log("Got a pong back!")
+        var name = args[0]
+        PING_BACKS.push(name)
+    })
+
+    ping_interval = setInterval(ping_fnc, PING_TIMEOUT * 1000, session)
 }
 
 var ping_fnc = function(session) {
     if (session.isOpen) {
+        console.log("Sending ping")
+
         // proceed only if there's an active connection and we actually
         // pinged someone
         if (PINGED.length != 0) {
+            // get the list of users that didn't pong back
+            for (var i = 0; i < PING_BACKS.length; i++) {
+                var index = PINGED.indexOf(PING_BACKS[i])
+                if (index >= 0) PINGED.splice(index, 1)
+            }
 
+            // drop them using "instructor_gone" ans "student_gone"
+            // (don't exclude)
+            for (var i = 0; i < PINGED.length; i++) {
+                var name = PINGED[i]
+                var index1 = instructors.indexOf(name)
+                var index2 = students.indexOf(name)
+                if (index1 >= 0) {
+                    session.publish("api:instructor_gone", [],
+                                    {user_id: name}, {exclude_me: false})
+                }
+                if (index2 >= 0) {
+                    session.publish("api:student_gone", [],
+                                    {user_id: name}, {exclude_me: false})
+                }
+            }
         }
+
+        // send a new ping to the new list of users
+        PINGED = []
+        PING_BACKS = []
+        for (var i = 0; i < instructors.length; i++) {
+            PINGED.push(instructors[i])
+        }
+        for (var i = 0; i < students.length; i++) {
+            PINGED.push(students[i])
+        }
+
+        session.publish("api:ping")
+        console.log("Ping sent")
     }
 }
 
