@@ -38,6 +38,14 @@ var STATE = {
 var state = STATE.NOTHING
 var state_data = {}
 
+// PINGs: this is a beta functionality.  I'm not sure if this is even
+// required, but I wrote the code anyway.
+var PING = false
+var PING_TIMEOUT = 60  // 1 minute
+var PINGED = []  // the list of users that were ping'd
+var PING_BACKS = []  // the list of users that pong'd
+var ping_interval
+
 // this is a utility function, maybe in the future this should be moved to
 // a separate module?
 var shortest_array_in_set = function(set) {
@@ -160,6 +168,20 @@ connection.onopen = function(session) {
                             {exclude_me: false})  // let the server receive
                                                   // it, too
         }
+
+        // corner case: there are no more instructors to conduct the switch
+        // from groups mode back to nothing. We have to enforce state change
+        if (instructors.length == 0 && state == STATE.SMALL_GROUPS) {
+            console.log("The last instructor has gone. Switching from" +
+                        " SMALL_GROUPS to NOTHING")
+
+            session.publish("api:state_changed", [STATE.COUNTDOWN], {},
+                            {exclude_me: false})
+
+            // fixed 30-seconds countdown
+            session.call("api:start_counting_down", [30])
+        }
+
     })
 
     // simple RPC for newcomers
@@ -350,6 +372,16 @@ connection.onopen = function(session) {
         }
         callback(args[0])
     })
+}
+
+var ping_fnc = function(session) {
+    if (session.isOpen) {
+        // proceed only if there's an active connection and we actually
+        // pinged someone
+        if (PINGED.length != 0) {
+
+        }
+    }
 }
 
 console.log("Server listening on http://localhost:9001/")
