@@ -40,7 +40,7 @@ var state_data = {}
 
 // PINGs: this is a beta functionality.  I'm not sure if this is even
 // required, but I wrote the code anyway.
-var PING = false
+var PING = true
 var PING_TIMEOUT = 60  // 1 minute
 var PINGED = []  // the list of users that were ping'd
 var PING_BACKS = []  // the list of users that pong'd
@@ -427,6 +427,8 @@ var ping_fnc = function(session) {
 
         session.publish("api:ping")
         console.log("Ping sent")
+    } else {
+        console.error("Wanted to send ping, but the session is closed :(")
     }
 }
 
