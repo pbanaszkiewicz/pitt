@@ -1,6 +1,6 @@
 {
   "name": "pitt",
-  "version": "0.3.1",
+  "version": "0.4",
   "contributors": [
     {
       "name": "Piotr Banaszkiewicz",
@@ -22,7 +22,8 @@
   "dependencies": {
     "autobahn": "0.9.3",
     "express": "4.4.4",
-    "peer": "0.2.5"
+    "peer": "0.2.5",
+    "socket.io": "1.0.6"
   },
   "license": "MIT",
   "engines": {
