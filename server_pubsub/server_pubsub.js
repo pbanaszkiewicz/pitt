@@ -374,8 +374,8 @@ connection.onopen = function(session) {
     })
 
     session.register("api:pong", function(args, kwargs, details) {
-        console.log("Got a pong back!")
         var name = args[0]
+        console.log("Got a pong back! From", name)
         PING_BACKS.push(name)
     })
 
