@@ -1,10 +1,16 @@
 .sidebar {
     border-right: 1px solid #EEEEEE;
 }
+.chat {
+    border-left: 1px solid #EEEEEE;
+}
 
-.local-stream   {border: 2px solid green;}
-.remote-stream  {border: 2px solid red;}
-.teacher-stream {border: 2px solid red;}
+/* Only local stream should be rotated. Don't fool other people. */
+.local-stream   {transform: rotateY(180deg); -webkit-transform: rotateY(180deg);
+                                                 border: 3px solid green;}
+.remote-stream  {/*transform: rotateY(180deg);*/ border: 3px solid red;}
+.teacher-stream {/*transform: rotateY(180deg);*/ border: 3px solid red;}
+.video-thumbnail {cursor: pointer;}
 
 .original-size {width: 640px; height: 480px;}
 .medium-size   {width: 320px; height: 240px;}

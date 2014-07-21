@@ -4,9 +4,9 @@ var GROUP_MODE = 3
 var DEBUG = 2  // indicates the verbosity of the Peer logs (3 - max, 0 - min)
 
 // some global variables that hold very important data
-var students = Array()
-var instructors = Array()
-var room_peers = Array()
+var students = []
+var instructors = []
+var room_peers = []
 var user_id = ""
 var mode = 0
 var peer = new Peer({host: "localhost", port: 9000, debug: DEBUG})
@@ -40,7 +40,7 @@ function redraw_list(element, list, omitted_element) {
 // if service mode changes this will be triggered
 // `mode_n` is a number, either BROADCAST_MODE or GROUP_MODE
 function mode_change(mode_n) {
-    value = true
+    var value = true
     if (mode_n == GROUP_MODE) value = false
     $("#start_split_mode").attr("disabled", !value)
     $("#end_split_mode").attr("disabled", value)
@@ -71,7 +71,8 @@ function run_countdown(main_el, time_el, time, callback) {
     if (time > 0) {
         $(main_el).show()
         $(time_el).text(time)
-        window.setTimeout(run_countdown, 1000, main_el, time_el, time - 1, callback)
+        window.setTimeout(run_countdown, 1000, main_el, time_el, time - 1,
+                          callback)
     } else {
         $(main_el).hide()
         callback()
@@ -371,7 +372,7 @@ connection.onopen = function(session) {
         session.subscribe("api:mode_changed", on_mode_changed)
     }
     else if (MODE_TYPE == STUDENT) {
-        // upon arrival, every new instructor should announce themself
+        // upon arrival, every new student should announce themself
         session.publish("api:new_student", [], {user_id: user_id})
 
         // upon closing the page: send "leaving" event
