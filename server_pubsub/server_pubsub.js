@@ -11,7 +11,7 @@ app.use('/', express.static(__dirname + '/../client_pubsub'));
 app.listen(9001);
 
 var connection = new autobahn.Connection({
-    url: "ws://localhost:8080/ws",
+    url: "ws://localhost:9002/ws",
     realm: "peerinstruction"
 })
 

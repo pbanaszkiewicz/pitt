@@ -7,7 +7,7 @@
          "type": "router",
          "realms": [
             {
-               "name": "realm1",
+               "name": "peerinstruction",
                "roles": [
                   {
                      "name": "anonymous",
@@ -29,7 +29,7 @@
                "type": "web",
                "endpoint": {
                   "type": "tcp",
-                  "port": 8080
+                  "port": 9002
                },
                "paths": {
                   "/": {
