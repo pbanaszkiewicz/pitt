@@ -387,47 +387,49 @@ connection.onopen = function(session) {
 
 var ping_fnc = function(session) {
     // only if we have opened the session AND we have some peers connected
-    if (session.isOpen && (instructors.length != 0 || students.length != 0)) {
-        console.log("Sending ping")
+    if (session.isOpen) {
+        if (instructors.length != 0 || students.length != 0) {
+            console.log("Sending ping")
 
-        // proceed only if there's an active connection and we actually
-        // pinged someone
-        if (PINGED.length != 0) {
-            // get the list of users that didn't pong back
-            for (var i = 0; i < PING_BACKS.length; i++) {
-                var index = PINGED.indexOf(PING_BACKS[i])
-                if (index >= 0) PINGED.splice(index, 1)
+            // proceed only if there's an active connection and we actually
+            // pinged someone
+            if (PINGED.length != 0) {
+                // get the list of users that didn't pong back
+                for (var i = 0; i < PING_BACKS.length; i++) {
+                    var index = PINGED.indexOf(PING_BACKS[i])
+                    if (index >= 0) PINGED.splice(index, 1)
+                }
+
+                // drop them using "instructor_gone" ans "student_gone"
+                // (don't exclude)
+                for (var i = 0; i < PINGED.length; i++) {
+                    var name = PINGED[i]
+                    var index1 = instructors.indexOf(name)
+                    var index2 = students.indexOf(name)
+                    if (index1 >= 0) {
+                        session.publish("api:instructor_gone", [],
+                                        {user_id: name}, {exclude_me: false})
+                    }
+                    if (index2 >= 0) {
+                        session.publish("api:student_gone", [],
+                                        {user_id: name}, {exclude_me: false})
+                    }
+                }
             }
 
-            // drop them using "instructor_gone" ans "student_gone"
-            // (don't exclude)
-            for (var i = 0; i < PINGED.length; i++) {
-                var name = PINGED[i]
-                var index1 = instructors.indexOf(name)
-                var index2 = students.indexOf(name)
-                if (index1 >= 0) {
-                    session.publish("api:instructor_gone", [],
-                                    {user_id: name}, {exclude_me: false})
-                }
-                if (index2 >= 0) {
-                    session.publish("api:student_gone", [],
-                                    {user_id: name}, {exclude_me: false})
-                }
+            // send a new ping to the new list of users
+            PINGED = []
+            PING_BACKS = []
+            for (var i = 0; i < instructors.length; i++) {
+                PINGED.push(instructors[i])
             }
-        }
+            for (var i = 0; i < students.length; i++) {
+                PINGED.push(students[i])
+            }
 
-        // send a new ping to the new list of users
-        PINGED = []
-        PING_BACKS = []
-        for (var i = 0; i < instructors.length; i++) {
-            PINGED.push(instructors[i])
+            session.publish("api:ping")
+            console.log("Ping sent")
         }
-        for (var i = 0; i < students.length; i++) {
-            PINGED.push(students[i])
-        }
-
-        session.publish("api:ping")
-        console.log("Ping sent")
     } else {
         console.error("Wanted to send ping, but the session is closed :(")
     }
