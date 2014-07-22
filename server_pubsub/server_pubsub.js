@@ -386,7 +386,8 @@ connection.onopen = function(session) {
 }
 
 var ping_fnc = function(session) {
-    if (session.isOpen) {
+    // only if we have opened the session AND we have some peers connected
+    if (session.isOpen && (instructors.length != 0 || students.length != 0)) {
         console.log("Sending ping")
 
         // proceed only if there's an active connection and we actually
