@@ -47,9 +47,16 @@ Finally, install required dependencies:
 npm install
 ```
 
+If you need more details about installation, please follow the official
+[docs](https://github.com/pbanaszkiewicz/pitt/blob/develop/INSTALLATION.rst).
+
 ## Documentation
 
 ## History
 
 * v0.1 (2014-06-15): first buggy release
-* v0.2 (...): reworked architecture, quick mode-switching
+* v0.2 (): reworked architecture, quick mode-switching
+* v0.3 ():
+* v0.3.1 ():
+* v0.4 ():
+* v0.5 ():
