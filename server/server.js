@@ -7,7 +7,7 @@ var PeerServer = require('peer').PeerServer
 var app = express()
 var peer_server = new PeerServer({port: 9000})
 
-app.use('/', express.static(__dirname + '/../client_pubsub'));
+app.use('/', express.static(__dirname + '/../client'));
 app.listen(9001);
 
 var connection = new autobahn.Connection({
