@@ -244,53 +244,143 @@ Pub/sub
 .. todo: write them down
 
 ``new_student``
-  Does something.
+  Published by
+    Students joining in.
+
+  Who subscribes to it:
+    everyone
 
 ``student_gone``
-  Does something.
+  Published by
+    Students leaving.
+
+  Who subscribes to it:
+    everyone
 
 ``new_instructor``
-  Does something.
+  Published by
+    Instructors joining in.
+
+  Who subscribes to it:
+    everyone
 
 ``instructor_gone``
-  Does something.
+  Published by
+    Instructors leaving.
+
+  Who subscribes to it:
+    everyone
 
 ``state_changed``
-  Does something.
+  Published by
+    server, instructor
+
+  Who subscribes to it:
+    everyone
+
+  What it does:
+    it means that the current state of the application has changed (to what's
+    in the first argument) and everyone should react accordingly.
+
+  Arguments
+    ``args[0]``: new state.
 
 ``rooms_update``
-  Does something.
+  Published by
+    server
+
+  Who subscribes to it:
+    students
+
+  What it does:
+    it means that rooms occupation has changed.  Probably some students left
+    and others have been moved around.
+
+  Arguments
+    * ``kwargs["rooms"]``: rooms with corresponding students.
+    * ``kwargs["students_in_rooms"]``: reverse relationship: students and
+      corresponding rooms.
 
 ``split_mode_enabled``
-  Does something.
+  Published by
+    server
+
+  Who subscribes to it:
+    students
+
+  What it does:
+    it means that students should start calling their peers.
+
+  Arguments
+    * ``kwargs["rooms"]``: rooms with corresponding students.
+    * ``kwargs["students_in_rooms"]``: reverse relationship: students and
+      corresponding rooms.
 
 ``split_mode_disabled``
-  Does something.
+  Published by
+    server
+
+  Who subscribes to it:
+    students
+
+  What it does:
+    it means that students drop their calls.
+
+  Arguments
+    * ``kwargs["rooms"]``: rooms with corresponding students.
+    * ``kwargs["students_in_rooms"]``: reverse relationship: students and
+      corresponding rooms.
 
 ``call_me``
-  Does something.
+  Published by
+    newcomers while in BROADCASTING state
+
+  Who subscribes to it:
+    Broadcaster
+
+  What it does:
+    it means that broadcaster should call to that newcomer.
+
+  Arguments
+    * ``args[0]``: peer (callee) ID
+    * ``args[1]``: callee's room ID
 
 ``call_me_ROOMID``
-  Does something.
+  Published by
+    new students joining in while in the SMALL GROUPS state.  **Also** everyone
+    joining the room as soon as split mode enables.
+
+  Who subscribes to it:
+    All students, but they subscribe with ``ROOMID`` set to their room.
+
+  What it does:
+    it means that students within the room should call the incoming person.
+
+  Arguments
+    * ``args[0]``: peer (callee) ID
+    * ``args[1]``: callee's room ID
 
 ``counting_down``
-  Does something.
+  Published by
+    server
+
+  Who subscribes to it:
+    Every peer
+
+  What it does:
+    announces every second so that peers can update warning messages.  It's
+    used as a hearing-aid for students to end their conversations soon.
+
+  Arguments
+    * ``args[0]``: time (30, 29, …, 2, 1, 0)
 
 ``ping``
-  Does something.
+  Published by
+    server
 
+  Who subscribes to it:
+    Every peer
 
-
-.. function:: api:get_current_state(args, kwargs, details)
-
-    Returns current state of the application.  It's mostly intended for
-    newcomers, ie. people joining the session.
-
-    :param list args: not used
-    :param dict kwargs: the ``user_id`` contains newcomer's ID
-    :param details: not used
-    :returns: the list of students (``students``), the list of instructors
-              (``instructors``), the current state (``state``),
-              and additional data associated with that state (``state_data``)
-              like the room for students to join.
-    :rtype: dict
+  What it does:
+    informs peers that they should report their presence to the server.  Peers
+    that don't answer the request (via ``pong``) are dropped.
