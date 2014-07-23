@@ -157,10 +157,69 @@ RPCs
 
 .. todo: write them down
 
+``get_current_state``
+  Handles: server.
+  Called by: any incoming peer.
+  Returns current state of the application.
+
+``init_split_mode``
+  Does something.
+
+``end_split_mode``
+  Does something.
+
+``get_room_information``
+  Does something.
+
+``start_counting_down``
+  Does something.
+
+``pong``
+  Does something.
+
+
 Pub/sub
 ~~~~~~~
 
 .. todo: write them down
+
+``new_student``
+  Does something.
+
+``student_gone``
+  Does something.
+
+``new_instructor``
+  Does something.
+
+``instructor_gone``
+  Does something.
+
+``state_changed``
+  Does something.
+
+``rooms_update``
+  Does something.
+
+``split_mode_enabled``
+  Does something.
+
+``split_mode_disabled``
+  Does something.
+
+``call_me``
+  Does something.
+
+``call_me_ROOMID``
+  Does something.
+
+``counting_down``
+  Does something.
+
+``ping``
+  Does something.
+
+
 
 .. function:: api:get_current_state(args, kwargs, details)
 
