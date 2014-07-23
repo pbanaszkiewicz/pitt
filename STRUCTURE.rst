@@ -88,7 +88,7 @@ from either instructors list or students list.
 If the application is in the state different from NOTHING, different scenarios
 happen:
 
-State BROADCASTING:
+State BROADCASTING
   If instructor or student joins, they ask the broadcaster instructor to add
   them to the call.
 
@@ -100,7 +100,7 @@ State BROADCASTING:
   Only the instructor who initiated the broadcast (and therefore is the
   broadcaster) is able to switch back from BROADCASTING to NOTHING.
 
-State SMALL GROUPS:
+State SMALL GROUPS
   If instructor joins, nothing happens.
 
   If student joins, they're added to the room with the least number of
@@ -116,7 +116,7 @@ State SMALL GROUPS:
   If last instructor leaves, ie. there are no instructors left to switch to
   COUNTDOWN/NOTHING mode, the server switches to COUNTDOWN mode automatically.
 
-State COUNTDOWN:
+State COUNTDOWN
   In this state, the server counts down to zero every second.  By default, the
   countdown starts from 30.  After reaching zero, the state changes to NOTHING
   and all the calls are dropped.
