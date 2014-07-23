@@ -47,7 +47,7 @@ How to run everything
 
 To run `Crossbar.io`_, go to `Pitt`_ diretory and::
 
-    $ cd pitt/server_pubsub
+    $ cd pitt/server
     $ crossbar start
 
 To run `rfc5766-turn-server`_, invoke::
@@ -63,8 +63,8 @@ Which is credentials for user ``peer`` with password ``peerinstruction`` on
 
 Finally, to run `Pitt`_, do::
 
-    $ cd pitt/server_pubsub
-    $ ./server_pubsub.js
+    $ cd pitt/server
+    $ ./server.js
 
 That's it!
 
