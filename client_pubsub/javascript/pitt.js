@@ -566,4 +566,4 @@ PITT.Pitt = function(is_instructor) {
     INTERFACE.countdown = countdown
 
     return INTERFACE
-};
+}

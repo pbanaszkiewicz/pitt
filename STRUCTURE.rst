@@ -31,6 +31,10 @@ Instructor
 Student
   Any peer that is supposed to use Pitt for learning.
 
+Broadcaster
+  An instructor that streams to everyone (ie. all students and other
+  instructors).
+
 Server
   Right now Pitt can only work on one HTTP server.  In my configuration, there
   are actually three software servers running on one physical machine.  The
@@ -48,6 +52,10 @@ TURN server
   A server that, when direct connection fails, works as a "proxy" for peer
   calls.  Ie. when student C calls student D, but cannot find the way using
   STUN server, all traffic gets proxied through that TURN server.
+
+Room
+  This is official name for a group of students in SMALL GROUPS mode.  First
+  group is called ``room0``, second ``room1``, etc.
 
 Design decisions
 ----------------
@@ -116,9 +124,34 @@ State COUNTDOWN:
 Typical workflow
 ----------------
 
-Blah
+1. Everyone joins
+2. Instructor switches to BROADCASTING and streams their A/V to all students
+   and all instructors.
+3. If anyone new joins, the broadcaster calls them.
+4. The broadcaster switches to small group discussions: students are split into
+   groups of size specified by the instructors unless it's not possible.  For
+   example 6 students can be easily split into pairs and trios.  However,
+   7 students can only be split into: 2, 2, 3 (or 3, 4, or 4, 3, or 5,
+   2, or 7) but **not into** 6, 1 (there can't be any student alone).
+5. No additional functionality is implemented (like questions or voting).
+6. Any instructor can end the split by switching to countdown mode.
+7. After 30s (by default) the state switches to NOTHING.
 
 Signals
 -------
 
-Blah
+.. todo: split signal signatures into
+
+.. function:: api:get_current_state(args, kwargs, details)
+
+    Returns current state of the application.  It's mostly intended for
+    newcomers, ie. people joining the session.
+
+    :param list args: not used
+    :param dict kwargs: the ``user_id`` contains newcomer's ID
+    :param details: not used
+    :returns: the list of students (``students``), the list of instructors
+              (``instructors``), the current state (``state``),
+              and additional data associated with that state (``state_data``)
+              like the room for students to join.
+    :rtype: dict
