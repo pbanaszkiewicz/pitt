@@ -158,24 +158,84 @@ RPCs
 .. todo: write them down
 
 ``get_current_state``
-  Handles: server.
-  Called by: any incoming peer.
-  Returns current state of the application.
+  Called by
+    any incoming peer
+
+  Handles
+    server
+
+  Returns
+    current state of the application.  If the current state is SMALL GROUPS,
+    and the newcomer is student, the server returns additional
+    ``state_data['join_room']`` that's a room ID for the student to join.  The
+    join happens by publishing ``call_me_ROOMID`` with student's peer ID.
 
 ``init_split_mode``
-  Does something.
+  Called by
+    any instructor
+
+  Handles
+    server
+
+  Arguments
+    ``size``: intended group size that students should be split into (for
+    example pairs, trios, etc).
+
+  Does:
+    splits students into groups (rooms) - taking intended group size into
+    account, but recalculating for actual number of students.  Ie. it checks if
+    in the last room there's only one student left.  If so, the student is
+    moved to the preceding room.
+
+  Publishes
+    ``split_mode_enabled`` with ``rooms``, ``students_in_rooms`` arguments.
+
+  Returns
+    current state.  It's not used, anyway.
 
 ``end_split_mode``
-  Does something.
+  Called by
+    the server itself
+
+  Handles
+    server
+
+  Does:
+    clears internal ``rooms`` and ``students_rooms`` variables.
+
+  Publishes
+    ``split_mode_disabled``
+
+  Returns
+    current state.  It's not used, anyway.
 
 ``get_room_information``
-  Does something.
+  **DEPRECATED**.  Now information with room to join by students is published
+  in ``split_mode_enabled``.
 
 ``start_counting_down``
-  Does something.
+  Called by
+    any instructor (instead of ``end_split_mode`` they call this)
+
+  Handles
+    server
+
+  Does:
+    every second publishes ``counting_down`` with current time (usually 30,
+    29, 28, … 2, 1, 0)
+
+  Publishes
+    if time == 0: ``state_changed`` with argument NOTHING.
 
 ``pong``
-  Does something.
+  Called by
+    any peer
+
+  Handles
+    server
+
+  Does:
+    registers list of peers that respond to ``ping`` request (publication).
 
 
 Pub/sub
