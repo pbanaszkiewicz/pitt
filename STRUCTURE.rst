@@ -140,7 +140,27 @@ Typical workflow
 Signals
 -------
 
-.. todo: split signal signatures into
+A channel is like a common event that many peers subscribe to (ie. they're
+instantly informed about anything new appearing on that channel).  This is
+also called pub/sub architecture.  Any peer can publish on any channel they
+want.  Any peer can receive events from channels they're subscribing.
+
+On the other hand, an RPC is a function that can be invoked on only one peer
+by any other peer.  Think of this as executing procedures on the server.
+Except that you don't know who the server is.  So peers only know what they
+want to execute, and the router manages data transmission between "peer who
+runs RPC" (again, you can think of it as a server) and "peer who wants the RPC
+to be run on someone" (sort of a client).
+
+RPCs
+~~~~
+
+.. todo: write them down
+
+Pub/sub
+~~~~~~~
+
+.. todo: write them down
 
 .. function:: api:get_current_state(args, kwargs, details)
 
