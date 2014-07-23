@@ -69,3 +69,56 @@ There are these states within the application:
 * COUNTDOWN: the server counts from 30 down to 0 -- and every second annouces
   this to all peers
 
+Not every browser correctly handles exits and WebRTC streams are stateless,
+therefore the server sends the ping request to everyone every 60 seconds.
+In the worst case scenario, a disconnected peer can be "frozen" for everyone
+for at most 60 seconds (and by frozen I mean their stream not moving at all).
+
+When someone joins / leaves, every peer automatically has to add/remove them
+from either instructors list or students list.
+
+If the application is in the state different from NOTHING, different scenarios
+happen:
+
+State BROADCASTING:
+  If instructor or student joins, they ask the broadcaster instructor to add
+  them to the call.
+
+  If instructor or student leaves, they simply close the audio/video call.
+
+  If the broadcasting instructor leaves, all the calls are dropped and the
+  state returns to NOTHING.
+
+  Only the instructor who initiated the broadcast (and therefore is the
+  broadcaster) is able to switch back from BROADCASTING to NOTHING.
+
+State SMALL GROUPS:
+  If instructor joins, nothing happens.
+
+  If student joins, they're added to the room with the least number of
+  students.
+
+  If the students leaves from the group discussion, and there is only one
+  student left in that group, the lone student is being moved to the group
+  with the least number of students and the empty room is removed.
+
+  Any instructor is able to end SMALL GROUPS mode.  This switches to COUNTDOWN
+  and then to NOTHING.
+
+  If last instructor leaves, ie. there are no instructors left to switch to
+  COUNTDOWN/NOTHING mode, the server switches to COUNTDOWN mode automatically.
+
+State COUNTDOWN:
+  In this state, the server counts down to zero every second.  By default, the
+  countdown starts from 30.  After reaching zero, the state changes to NOTHING
+  and all the calls are dropped.
+
+Typical workflow
+----------------
+
+Blah
+
+Signals
+-------
+
+Blah
