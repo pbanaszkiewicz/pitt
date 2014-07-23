@@ -98,7 +98,7 @@ GUI.GUI = function() {
 
         audio_ctx = new window.AudioContext()
         gain = audio_ctx.createGain()
-        gain.gain.value = 0.5
+        gain.gain.value = 0.1
         gain.connect(audio_ctx.destination)
     }
 
