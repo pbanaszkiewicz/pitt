@@ -322,8 +322,17 @@ PITT.Pitt = function(is_instructor) {
 
     // use this function to init the state of this Pitt object
     var init = function(success_callback, error_callback) {
+        var video_constrains = {
+            mandatory: {
+                maxWidth: 640
+                // maxHeight: 480 - forcing one parameter is enough, otherwise
+                //                  there are some issues with browsers
+            },
+            optional: []
+        }
+
         navigator.getUserMedia(
-            {audio: true, video: true},
+            {audio: true, video: video_constrains},
             function(stream) {
                 user_media = stream
                 success_callback(stream)
