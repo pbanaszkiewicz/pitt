@@ -23,7 +23,7 @@ PITT.Pitt = function(is_instructor) {
     // create WAMP connection object.  It's not connected *yet*.  We're waiting
     // for `peer` object to connect (in `Pitt.connect()`)
     var wamp = new autobahn.Connection({
-        url: "ws://" + window.location.hostname + ":8080/ws",
+        url: "ws://" + window.location.hostname + ":9002/ws",
         realm: "peerinstruction",
         // these settings speed up reconnection
         max_retries: 20,
@@ -322,8 +322,17 @@ PITT.Pitt = function(is_instructor) {
 
     // use this function to init the state of this Pitt object
     var init = function(success_callback, error_callback) {
+        var video_constrains = {
+            mandatory: {
+                maxWidth: 640
+                // maxHeight: 480 - forcing one parameter is enough, otherwise
+                //                  there are some issues with browsers
+            },
+            optional: []
+        }
+
         navigator.getUserMedia(
-            {audio: true, video: true},
+            {audio: true, video: video_constrains},
             function(stream) {
                 user_media = stream
                 success_callback(stream)
@@ -566,4 +575,4 @@ PITT.Pitt = function(is_instructor) {
     INTERFACE.countdown = countdown
 
     return INTERFACE
-};
+}
