@@ -78,8 +78,12 @@ v0.4 (2014-07-21)
   signalling within application, turned on TURN server, refreshed the interface
   (thanks to Bootstrap).
 
-v0.4.1 (...)
-  Added documentation.
+v0.4.1 (2014-07-26)
+  Added docs (installation, contributing, authors/contributors, application
+  structure and signalling).  Turned beep volume down.  Dropped "_pubsub" from
+  directories and one file names.  Forced "640px by something" resolution --
+  not every browser lets use 640x480, so Pitt forces only width, and height
+  should be set automatically.
 
 v0.5 (...)
   Nothing yet.
