@@ -133,6 +133,8 @@ PITT.Pitt = function(is_instructor) {
         session.subscribe("api:counting_down", on_counting_down)
 
         session.subscribe("api:ping", on_ping)
+
+        session.subscribe("api:chat_message", on_chat_message)
     }
     wamp.onclose = function(reason, details) {
         console.error("WAMP connection ERROR!", reason, details)
@@ -316,6 +318,15 @@ PITT.Pitt = function(is_instructor) {
         console.log("Ponged back")
     }
 
+    on_chat_message = function(args, kwargs, details) {
+        author = kwargs["user_id"]
+        message = kwargs["message"]
+        timestamp = new Date()
+        console.log("New message from:", author)
+
+        newChatMessage(author, message, timestamp)
+    }
+
     /***************
     PUBLIC INTERFACE
     ***************/
@@ -468,6 +479,7 @@ PITT.Pitt = function(is_instructor) {
             }
         )
     }
+
     var stop_broadcast = function() {
         // 1. disconnect all connected peers
         var calls_to_close = Object.keys(active_calls)
@@ -543,6 +555,11 @@ PITT.Pitt = function(is_instructor) {
         )
     }
 
+    var send_message = function(message) {
+        var data = {user_id: user_id, message: message}
+        wamp.session.publish("api:chat_message", [], data, {exclude_me: false})
+    }
+
     var updateUserId = function(id) {}
     var updateStudents = function(students) {}
     var updateInstructors = function(instructors) {}
@@ -551,6 +568,7 @@ PITT.Pitt = function(is_instructor) {
     var droppedCall = function(peer_id, reason) {}
     var updateStudentsInRoom = function(students) {}
     var updateCountdown = function(t) {}
+    var newChatMessage = function(u, m, t) {}
 
     INTERFACE.init = init
     // INTERFACE.connect_peer = connect_peer
@@ -566,6 +584,7 @@ PITT.Pitt = function(is_instructor) {
     INTERFACE.onDroppedCall = function(_c) {droppedCall = _c}
     INTERFACE.onUpdateStudentsInRoom = function(_c) {updateStudentsInRoom = _c}
     INTERFACE.onUpdateCountdown = function(_c) {updateCountdown = _c}
+    INTERFACE.onNewChatMessage = function(_c) {newChatMessage = _c}
 
     INTERFACE.start_broadcast = start_broadcast
     INTERFACE.stop_broadcast = stop_broadcast
@@ -573,6 +592,7 @@ PITT.Pitt = function(is_instructor) {
     INTERFACE.start_split_mode = start_split_mode
     INTERFACE.stop_split_mode = stop_split_mode
     INTERFACE.countdown = countdown
+    INTERFACE.send_message = send_message
 
     return INTERFACE
 }

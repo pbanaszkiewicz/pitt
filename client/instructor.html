@@ -84,6 +84,9 @@
       </div>
       <div class="col-sm-2 chat">
         <h5>Chat</h5>
+        <input type="text" name="chat_message" id="chat_message" placeholder="Message…">
+        <ul id="chatbox">
+        </ul>
       </div>
     </div>
   </div>
@@ -106,12 +109,14 @@
     instructor.onUpdateInstructors(gui.onUpdateInstructors)
     instructor.onIncomingCall(gui.onIncomingCall)
     instructor.onUpdateCountdown(gui.onUpdateCountdown)
+    instructor.onNewChatMessage(gui.onNewChatMessage)
 
     instructor.init(gui.media_access, gui.media_error)
     gui.onStartBroadcasting(instructor.start_broadcast)
     gui.onStopBroadcasting(instructor.stop_broadcast)
     gui.onSplitStudents(instructor.start_split_mode)
     gui.onBackToBroadcast(instructor.countdown, instructor.stop_split_mode)
+    gui.onSendMessage(instructor.send_message)
   </script>
 </body>
 </html>

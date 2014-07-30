@@ -15,6 +15,8 @@ GUI.GUI = function() {
     var btn_stop_broadcast = $("#stop_broadcasting")
     var div_countdown = $("#countdown_container")
     var counter = $("#split_countdown")
+    var chatbox = $("#chatbox")
+    var btn_message = $("#chat_message")
 
     // var create_sound = function(frequency, next_node) {
     //     osc = audio_ctx.createOscillator()
@@ -245,6 +247,21 @@ GUI.GUI = function() {
             console.log("beeping")
             play_sound(440, 500, gain)
         }
+    }
+
+    INTERFACE.onNewChatMessage = function(author, message, timestamp) {
+        var element = $("<li>")
+        element.html("<strong>" + author + "</strong> " + message)
+        chatbox.append(element)
+    }
+
+    INTERFACE.onSendMessage = function(send_callback) {
+        btn_message.keypress(function(e) {
+            if(e.keyCode == 13) {
+                console.log("Sending message:", e.target.value)
+                send_callback(e.target.value)
+            }
+        })
     }
 
     return INTERFACE
