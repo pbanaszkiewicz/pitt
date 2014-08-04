@@ -260,6 +260,7 @@ GUI.GUI = function() {
             if(e.keyCode == 13) {
                 console.log("Sending message:", e.target.value)
                 send_callback(e.target.value)
+                e.target.value = ""
             }
         })
     }

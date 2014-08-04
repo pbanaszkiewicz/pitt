@@ -67,6 +67,13 @@ PITT.Pitt = function(is_instructor) {
                 state = result.state
                 state_data = result.state_data
 
+                // update chat
+                var chat_history = result.chat_history
+                for (var i = 0; i < chat_history.length; i++) {
+                    var chat = chat_history[i]
+                    newChatMessage(chat.user_id, chat.message, chat.timestamp)
+                };
+
                 updateStudents(students)
                 updateInstructors(instructors)
                 updateState(state, state_data)

@@ -22,6 +22,7 @@ var students_rooms = {}  // student->room relation
 // for example, when rooms["room1"] = Array("student1", "student2")
 // then students_rooms["student1"] = "room1" and
 // students_rooms["student2"] = "room1"
+var chat_history = []  // array containing chat messages
 
 // the STATE can go like this:
 //  NOTHING → BROADCASTING, NOTHING → SMALL_GROUPS
@@ -230,7 +231,8 @@ connection.onopen = function(session) {
             students: students,
             instructors: instructors,
             state: state,
-            state_data: state_data
+            state_data: state_data,
+            chat_history: chat_history
         }
     })
 
@@ -383,6 +385,14 @@ connection.onopen = function(session) {
     if (PING === true) {
         ping_interval = setInterval(ping_fnc, PING_TIMEOUT * 1000, session)
     }
+
+    session.subscribe("api:chat_message", function(args, kwargs, details) {
+        var user = kwargs["user_id"]
+        var msg = kwargs["message"]
+        var time = new Date();
+
+        chat_history.push({user_id: user, message: msg, timestamp: time})
+    })
 }
 
 var ping_fnc = function(session) {
