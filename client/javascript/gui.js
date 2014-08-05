@@ -18,22 +18,6 @@ GUI.GUI = function() {
     var chatbox = $("#chatbox")
     var btn_message = $("#chat_message")
 
-    // var create_sound = function(frequency, next_node) {
-    //     osc = audio_ctx.createOscillator()
-
-    //     // oscillator has to be the first node in graph
-    //     // next node should be either destination or some effect node
-    //     if (next_node !== undefined) {
-    //         osc.connect(next_node)
-    //     }
-
-    //     // "sine", "square", "sawtooth", "triangle"
-    //     osc.type = "sine"
-    //     osc.frequency.value = frequency
-
-    //     return osc
-    // }
-
     var play_sound = function(frequency, interval, next_node) {
         // play the sound for given time (interval, ms)
         var beep = audio_ctx.createOscillator()
@@ -82,6 +66,12 @@ GUI.GUI = function() {
         video.prop("muted", muted)
         video.prop("poster", "/img/white-noise-640x480.jpg")
         $(el).append(video)
+    }
+
+    function add_notification(parent, text) {
+        var el = $("<li>")
+        el.html("<i>" + text + "</i>")
+        parent.append(el)
     }
 
     INTERFACE.init = function() {
@@ -143,6 +133,9 @@ GUI.GUI = function() {
                 btn_stop_broadcast.attr("disabled",
                                         broadcaster === user_id ? false : true)
                 div_countdown.hide()
+
+                add_notification(chatbox, broadcaster + " is now broadcasting.")
+
                 break
 
             case STATE.SMALL_GROUPS:

@@ -91,7 +91,8 @@ PITT.Pitt = function(is_instructor) {
                     // the server has given a room to join, so let's ask the
                     // peers in that room to call us
                     var join_room = state_data["join_room"]
-                    console.log("Asking peers in the room to call me")
+                    console.log("Asking peers in the room " + join_room +
+                                " to call me")
 
                     session.publish("api:call_me_" + join_room, [user_id,
                                     join_room])
@@ -326,12 +327,18 @@ PITT.Pitt = function(is_instructor) {
     }
 
     on_chat_message = function(args, kwargs, details) {
-        author = kwargs["user_id"]
-        message = kwargs["message"]
+        var author = kwargs["user_id"]
+        var message = kwargs["message"]
+        var room = kwargs["room"]
         timestamp = new Date()
-        console.log("New message from:", author)
 
-        newChatMessage(author, message, timestamp)
+        // only accept messages from within the room (while in SMALL GROUP
+        // mode).
+        // TODO: use filtering to send messages to only room participants
+        if (room == "global" || room == room_id) {
+            console.log("New message from:", author)
+            newChatMessage(author, message, timestamp)
+        }
     }
 
     /***************
@@ -564,6 +571,10 @@ PITT.Pitt = function(is_instructor) {
 
     var send_message = function(message) {
         var data = {user_id: user_id, message: message}
+        if (room_id !== undefined) {
+            data["room"] = room_id
+        }
+
         wamp.session.publish("api:chat_message", [], data, {exclude_me: false})
     }
 
