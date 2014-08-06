@@ -201,8 +201,9 @@ PITT.Pitt = function(is_instructor) {
 
     on_state_change = function(args, kwargs, details) {
         console.log("Event: on_state_change")
-        state = args[0]
         state_data = kwargs
+        state_data["previous_state"] = state
+        state = args[0]
         updateState(state, state_data)
     }
 

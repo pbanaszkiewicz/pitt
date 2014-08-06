@@ -120,6 +120,13 @@ GUI.GUI = function() {
                 main_stream.prop("src", "")
                 main_stream.removeClass("local-stream")
                 $("#remote_streams").empty()
+
+                if (state_data["previous_state"] == STATE.BROADCASTING) {
+                    add_notification(chatbox, "Broadcast has ended.")
+                } else if (state_data["previous_state"] == STATE.SMALL_GROUPS) {
+                    add_notification(chatbox, "You're no longer in the room.")
+                }
+
                 break
 
             case STATE.BROADCASTING:
@@ -148,6 +155,7 @@ GUI.GUI = function() {
                 btn_start_broadcast.attr("disabled", true)
                 btn_stop_broadcast.attr("disabled", true)
                 div_countdown.hide()
+                add_notification(chatbox, "You're in the room.")
                 break
 
             case STATE.COUNTDOWN:
@@ -245,7 +253,18 @@ GUI.GUI = function() {
     INTERFACE.onNewChatMessage = function(author, message, timestamp) {
         var element = $("<li>")
         element.html("<strong>" + author + "</strong> " + message)
+
+        // Scroll the chat down if and only if it's already scrolled down.
+        // The actual scroll action takes place after appending new chat msg.
+        var scroll_down = false
+        if (chatbox.scrollTop() + chatbox.height() == chatbox.prop("scrollHeight")) {
+            scroll_down = true
+        }
         chatbox.append(element)
+
+        if (scroll_down) {
+            chatbox.scrollTop(chatbox.prop("scrollHeight"))
+        }
     }
 
     INTERFACE.onSendMessage = function(send_callback) {
