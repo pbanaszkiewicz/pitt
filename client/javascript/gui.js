@@ -71,7 +71,25 @@ GUI.GUI = function() {
     function add_notification(parent, text) {
         var el = $("<li>")
         el.html("<i>" + text + "</i>")
-        parent.append(el)
+        scroll_list_down(parent, function() {
+            parent.append(el)
+        })
+    }
+
+    function scroll_list_down(element, callback) {
+        // Scroll the chat down if and only if it's already scrolled down.
+        // The actual scroll action takes place after appending new chat msg.
+        var scroll_down = false
+        var scroll_height = element.prop("scrollHeight")
+        if (element.scrollTop() + element.height() == scroll_height) {
+            scroll_down = true
+        }
+
+        callback()
+
+        if (scroll_down) {
+            element.scrollTop(element.prop("scrollHeight"))
+        }
     }
 
     INTERFACE.init = function() {
@@ -123,7 +141,7 @@ GUI.GUI = function() {
 
                 if (state_data["previous_state"] == STATE.BROADCASTING) {
                     add_notification(chatbox, "Broadcast has ended.")
-                } else if (state_data["previous_state"] == STATE.SMALL_GROUPS) {
+                } else if (state_data["previous_state"] == STATE.COUNTDOWN) {
                     add_notification(chatbox, "You're no longer in the room.")
                 }
 
@@ -253,18 +271,9 @@ GUI.GUI = function() {
     INTERFACE.onNewChatMessage = function(author, message, timestamp) {
         var element = $("<li>")
         element.html("<strong>" + author + "</strong> " + message)
-
-        // Scroll the chat down if and only if it's already scrolled down.
-        // The actual scroll action takes place after appending new chat msg.
-        var scroll_down = false
-        if (chatbox.scrollTop() + chatbox.height() == chatbox.prop("scrollHeight")) {
-            scroll_down = true
-        }
-        chatbox.append(element)
-
-        if (scroll_down) {
-            chatbox.scrollTop(chatbox.prop("scrollHeight"))
-        }
+        scroll_list_down(chatbox, function() {
+            chatbox.append(element)
+        })
     }
 
     INTERFACE.onSendMessage = function(send_callback) {

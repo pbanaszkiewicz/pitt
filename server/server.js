@@ -22,7 +22,7 @@ var students_rooms = {}  // student->room relation
 // for example, when rooms["room1"] = Array("student1", "student2")
 // then students_rooms["student1"] = "room1" and
 // students_rooms["student2"] = "room1"
-var chat_history = {}  // array containing chat messages
+var chat_history = {"global": []}  // array containing chat messages
 
 // the STATE can go like this:
 //  NOTHING → BROADCASTING, NOTHING → SMALL_GROUPS
