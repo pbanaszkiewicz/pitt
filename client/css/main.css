@@ -1,4 +1,5 @@
-.page-header {margin-top: 10px;}
+.page-header {margin: 10px 0;}
+.page-header h1 {margin-top: 10px;}
 
 .topbar {list-style: none; padding: 0 0 9px 0; border-bottom: 1px solid #EEEEEE;}
 .topbar li {float: left;}
@@ -15,7 +16,7 @@
 .video-thumbnail {cursor: pointer;}
 
 .original-size {width: 640px; height: 480px;}
-/* additional 6px to account for border */
+/* additional 6px to account for double 3px border */
 .medium-size   {width: 326px; height: 246px;}
 .small-size    {width: 166px; height: 126px;}
 
@@ -28,3 +29,21 @@
 #remote_streams {position: absolute; top: 126px; left: 655px;}
 
 #remote_streams video {padding: 0; margin: 0; margin-bottom: -2px;}
+
+#video_container {min-width: 660px;}
+
+/* Show presence list and chat side by side for tablets */
+@media (max-width: 1200px) {
+    .presence-list {float: left; height: 350px; width: 200px;}
+    .chat          {float: left; height: 350px; width: 250px;}
+    .sidebar {border: none;}
+}
+
+/* Show video stream thumbs below main stream for smaller tablets and/or
+   phones */
+@media (max-width: 991px) {
+    #user_stream    {position: static;}
+    #remote_streams {position: relative; top: -131px; left: 166px;}
+    #remote_streams {overflow: auto; height: 142px; width: 474px;}
+    #remote_streams video {float: left; display: inline;}
+}
