@@ -17,7 +17,7 @@
 
   <!-- Static navbar -->
   <nav class="navbar navbar-default navbar-static-top" role="navigation">
-    <div class="container-fluid">
+    <div class="container">
       <div class="navbar-header">
         <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
           <span class="sr-only">Toggle navigation</span>
@@ -37,7 +37,7 @@
     </div>
   </nav>
 
-  <div class="container-fluid">
+  <div class="container">
     <div class="alert alert-danger" role="alert" id="countdown_container" style="display: none">
       You'll return to broadcast mode in: <span id="split_countdown"></span>…
     </div>
@@ -47,33 +47,33 @@
     </div>
 
     <div class="row">
-      <div class="col-sm-2 sidebar">
-        <p>List of instructors:</p>
-        <ul id="instructors_list"></ul>
+      <div class="col-lg-3 col-xs-12 sidebar">
+        <div class="presence-list">
+          <p>List of instructors:</p>
+          <ul id="instructors_list"></ul>
 
-        <p>List of other students:</p>
-        <ul id="students_list"></ul>
+          <p>List of other students:</p>
+          <ul id="students_list"></ul>
 
-        <p>List of students in the same room:</p>
-        <ul id="room_peers_list"></ul>
-
-        <hr>
-        <h5>Chat</h5>
-        <input type="text" name="chat_message" id="chat_message" placeholder="Message…">
-        <ul id="chatbox">
-        </ul>
+          <p>List of students in the same room:</p>
+          <ul id="room_peers_list"></ul>
+        </div>
+        <hr class="visible-lg">
+        <div class="chat">
+          <h5>Chat</h5>
+          <ul id="chatbox"></ul>
+          <form>
+            <input type="text" name="chat_message" id="chat_message" placeholder="Message…">
+          </form>
+        </div>
       </div>
-      <div class="col-sm-10">
-        <div class="row">
-          <div class="col-sm-8">
-            <h4>Main stream</h4>
-            <video id="main_stream" class="original-size" poster="/img/white-noise-640x480.jpg" muted autoplay></video>
-          </div>
-          <div class="col-sm-4">
-            <h5>Thumbnails</h5>
-            <video id="user_stream" class="local-stream medium-size video-thumbnail" poster="/img/white-noise-640x480.jpg" muted autoplay></video>
-            <div id="remote_streams"></div>
-          </div>
+      <div class="col-lg-9 col-md-12 col-xs-12">
+        <div id="video_container">
+          <video id="main_stream" class="original-size" poster="/img/placeholder_mainstream.jpg" muted autoplay></video>
+
+          <video id="user_stream" class="local-stream small-size video-thumbnail" poster="/img/white-noise-640x480.jpg" muted autoplay></video>
+
+          <div id="remote_streams"></div>
         </div>
       </div>
     </div>

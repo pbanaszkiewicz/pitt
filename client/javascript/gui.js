@@ -99,9 +99,11 @@ GUI.GUI = function() {
 
         user_stream.on("click", function(e) {
             main_stream.prop("src", e.target.src)
+            main_stream.addClass("local-stream")
         })
         $("#remote_streams").on("click", "video", function(e) {
             main_stream.prop("src", e.target.src)
+            main_stream.removeClass("local-stream")
         })
 
         audio_ctx = new window.AudioContext()
