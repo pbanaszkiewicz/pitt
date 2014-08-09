@@ -16,7 +16,7 @@
 
   <!-- Static navbar -->
   <nav class="navbar navbar-default navbar-static-top" role="navigation">
-    <div class="container-fluid">
+    <div class="container">
       <div class="navbar-header">
         <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
           <span class="sr-only">Toggle navigation</span>
@@ -37,68 +37,89 @@
     </div>
   </nav>
 
-  <div class="container-fluid">
+  <div class="container">
     <div class="alert alert-danger" role="alert" id="countdown_container" style="display: none">
       The split mode ends in <span id="split_countdown"></span>.
     </div>
 
     <div class="page-header">
-      <h1>This is testing dashboard <small>Your id: <span id="user_id">abcdefghijklmn</span></small></h1>
+      <h1>This is testing dashboard <small>Your id: <span id="user_id">instructor1</span></small></h1>
     </div>
 
     <div class="row">
-      <div class="col-sm-2 sidebar">
-        <div class="control_panel">
-          <p>
+      <div class="col-sm-12">
+        <ul class="topbar clearfix">
+          <li>
             Split size: <input type="number" name="split_size" id="split_size" min="2" max="6" value="2" style="width: 40px">
             <button type="button" class="btn btn-primary btn-sm" id="start_split_mode">Split students into small groups</button>
             <button type="button" class="btn btn-primary btn-sm" id="end_split_mode" disabled="disabled">Back to broadcast mode</button>
-          </p>
-          <hr>
-          <p>
+          </li>
+          <li class="separator"></li>
+          <li>
             <button type="button" class="btn btn-warning btn-sm" id="start_broadcasting">Start broadcasting</button>
             <button type="button" class="btn btn-warning btn-sm" id="stop_broadcasting" disabled="disabled">Stop broadcasting</button>
-          </p>
-        </div>
+          </li>
+        </ul>
+      </div>
+    </div>
 
-        <hr>
-
-        <p>List of students:</p>
-        <ul id="students_list">
+    <div class="row">
+      <div class="col-lg-3 sidebar">
+        <div class="presence-list">
+          <p>Students:</p>
+          <ul id="students_list">
             <li>folk1</li>
             <li>folk2</li>
             <li>folk3</li>
-        </ul>
+          </ul>
 
-        <p>List of other instructors:</p>
-        <ul id="instructors_list">
-            <li>instructor1</li>
+          <p>Other instructors:</p>
+          <ul id="instructors_list">
             <li>instructor2</li>
             <li>instructor3</li>
+          </ul>
+        </div>
+
+        <hr>
+        <h5>Chat</h5>
+        <ul id="chatbox">
+          <li><strong>folk1</strong> what's up?</li>
+          <li><strong>folk2</strong> nothing?</li>
+          <li><strong>instructor1</strong> we're kicking off in a few minutes</li>
+          <li><strong>instructor1</strong> so get ready</li>
+          <li><strong>folk3</strong> what's required?</li>
+          <li><strong>instructor1</strong> only headphones and a mike</li>
+          <li><strong>folk1</strong> what's up?</li>
+          <li><strong>folk2</strong> nothing?</li>
+          <li><strong>instructor1</strong> we're kicking off in a few minutes</li>
+          <li><strong>instructor1</strong> so get ready</li>
+          <li><strong>folk3</strong> what's required?</li>
+          <li><strong>instructor1</strong> only headphones and a mike</li>
+          <li><strong>folk1</strong> what's up?</li>
+          <li><strong>folk2</strong> nothing?</li>
+          <li><strong>instructor1</strong> we're kicking off in a few minutes</li>
+          <li><strong>instructor1</strong> so get ready</li>
+          <li><strong>folk3</strong> what's required?</li>
+          <li><strong>instructor1</strong> only headphones and a mike</li>
         </ul>
+        <form>
+          <input type="text" name="chat_message" id="chat_message" placeholder="Message…">
+        </form>
       </div>
-      <div class="col-sm-8">
-        <div class="row">
-          <div class="col-sm-8">
-            <h4>Main stream</h4>
-            <video id="main_stream" class="original-size" poster="/img/white-noise-640x480.jpg" muted autoplay></video>
-          </div>
-          <div class="col-sm-4">
-            <h5>Thumbnails</h5>
-            <video id="user_stream" class="local-stream medium-size video-thumbnail" poster="/img/white-noise-640x480.jpg" muted autoplay></video>
-            <div id="remote_streams">
-                <video id="video_folk1" class="remote-stream medium-size video-thumbnail" autoplay muted="false" poster="/img/white-noise-640x480.jpg"></video>
-                <video id="video_folk2" class="remote-stream medium-size video-thumbnail" autoplay muted="false" poster="/img/white-noise-640x480.jpg"></video>
-            </div>
+      <div class="col-lg-9">
+        <div id="video_container">
+          <video id="main_stream" class="original-size" poster="/img/placeholder_mainstream.jpg" muted autoplay></video>
+
+          <video id="user_stream" class="local-stream small-size video-thumbnail" poster="/img/white-noise-640x480.jpg" muted autoplay></video>
+
+          <div id="remote_streams">
+            <video id="video_folk1" class="remote-stream small-size video-thumbnail" autoplay muted="false" poster="/img/white-noise-640x480.jpg"></video>
+
+            <video id="video_folk2" class=" remote-stream small-size video-thumbnail" autoplay muted="false" poster="/img/white-noise-640x480.jpg"></video>
+
+            <video id="video_folk3" class=" remote-stream small-size video-thumbnail" autoplay muted="false" poster="/img/white-noise-640x480.jpg"></video>
           </div>
         </div>
-      </div>
-      <div class="col-sm-2 chat">
-        <h5>Chat</h5>
-        <input type="text" name="chat_message" id="chat_message" placeholder="Message…">
-        <ul id="chatbox">
-            <li></li>
-        </ul>
       </div>
     </div>
   </div>

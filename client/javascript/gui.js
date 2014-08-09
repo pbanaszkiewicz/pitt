@@ -99,11 +99,9 @@ GUI.GUI = function() {
 
         user_stream.on("click", function(e) {
             main_stream.prop("src", e.target.src)
-            main_stream.addClass("local-stream")
         })
         $("#remote_streams").on("click", "video", function(e) {
             main_stream.prop("src", e.target.src)
-            main_stream.removeClass("local-stream")
         })
 
         audio_ctx = new window.AudioContext()
@@ -232,7 +230,7 @@ GUI.GUI = function() {
         var src = URL.createObjectURL(stream)
         // 2. add the video somewhere
         add_video_element("#remote_streams", "video_" + call.peer,
-                          "remote-stream medium-size video-thumbnail", src,
+                          "remote-stream small-size video-thumbnail", src,
                           false)
     }
 
