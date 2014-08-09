@@ -15,22 +15,8 @@ GUI.GUI = function() {
     var btn_stop_broadcast = $("#stop_broadcasting")
     var div_countdown = $("#countdown_container")
     var counter = $("#split_countdown")
-
-    // var create_sound = function(frequency, next_node) {
-    //     osc = audio_ctx.createOscillator()
-
-    //     // oscillator has to be the first node in graph
-    //     // next node should be either destination or some effect node
-    //     if (next_node !== undefined) {
-    //         osc.connect(next_node)
-    //     }
-
-    //     // "sine", "square", "sawtooth", "triangle"
-    //     osc.type = "sine"
-    //     osc.frequency.value = frequency
-
-    //     return osc
-    // }
+    var chatbox = $("#chatbox")
+    var btn_message = $("#chat_message")
 
     var play_sound = function(frequency, interval, next_node) {
         // play the sound for given time (interval, ms)
@@ -82,6 +68,30 @@ GUI.GUI = function() {
         $(el).append(video)
     }
 
+    function add_notification(parent, text) {
+        var el = $("<li>")
+        el.html("<i>" + text + "</i>")
+        scroll_list_down(parent, function() {
+            parent.append(el)
+        })
+    }
+
+    function scroll_list_down(element, callback) {
+        // Scroll the chat down if and only if it's already scrolled down.
+        // The actual scroll action takes place after appending new chat msg.
+        var scroll_down = false
+        var scroll_height = element.prop("scrollHeight")
+        if (element.scrollTop() + element.height() == scroll_height) {
+            scroll_down = true
+        }
+
+        callback()
+
+        if (scroll_down) {
+            element.scrollTop(element.prop("scrollHeight"))
+        }
+    }
+
     INTERFACE.init = function() {
         $("#user_id").text("Not connected")
         // -1 is not defined, therefore will trigger `default` action
@@ -128,6 +138,13 @@ GUI.GUI = function() {
                 main_stream.prop("src", "")
                 main_stream.removeClass("local-stream")
                 $("#remote_streams").empty()
+
+                if (state_data["previous_state"] == STATE.BROADCASTING) {
+                    add_notification(chatbox, "Broadcast has ended.")
+                } else if (state_data["previous_state"] == STATE.COUNTDOWN) {
+                    add_notification(chatbox, "You're no longer in the room.")
+                }
+
                 break
 
             case STATE.BROADCASTING:
@@ -141,6 +158,9 @@ GUI.GUI = function() {
                 btn_stop_broadcast.attr("disabled",
                                         broadcaster === user_id ? false : true)
                 div_countdown.hide()
+
+                add_notification(chatbox, broadcaster + " is now broadcasting.")
+
                 break
 
             case STATE.SMALL_GROUPS:
@@ -153,6 +173,7 @@ GUI.GUI = function() {
                 btn_start_broadcast.attr("disabled", true)
                 btn_stop_broadcast.attr("disabled", true)
                 div_countdown.hide()
+                add_notification(chatbox, "You're in the room.")
                 break
 
             case STATE.COUNTDOWN:
@@ -245,6 +266,24 @@ GUI.GUI = function() {
             console.log("beeping")
             play_sound(440, 500, gain)
         }
+    }
+
+    INTERFACE.onNewChatMessage = function(author, message, timestamp) {
+        var element = $("<li>")
+        element.html("<strong>" + author + "</strong> " + message)
+        scroll_list_down(chatbox, function() {
+            chatbox.append(element)
+        })
+    }
+
+    INTERFACE.onSendMessage = function(send_callback) {
+        btn_message.keypress(function(e) {
+            if(e.keyCode == 13) {
+                console.log("Sending message:", e.target.value)
+                send_callback(e.target.value)
+                e.target.value = ""
+            }
+        })
     }
 
     return INTERFACE

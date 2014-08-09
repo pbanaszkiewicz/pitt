@@ -15,3 +15,5 @@
 .original-size {width: 640px; height: 480px;}
 .medium-size   {width: 320px; height: 240px;}
 .small-size    {width: 160px; height: 120px;}
+
+#chatbox {list-style: none; padding-left: 0; overflow: auto; height: 400px;}

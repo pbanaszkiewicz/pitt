@@ -22,6 +22,7 @@ var students_rooms = {}  // student->room relation
 // for example, when rooms["room1"] = Array("student1", "student2")
 // then students_rooms["student1"] = "room1" and
 // students_rooms["student2"] = "room1"
+var chat_history = {"global": []}  // array containing chat messages
 
 // the STATE can go like this:
 //  NOTHING → BROADCASTING, NOTHING → SMALL_GROUPS
@@ -230,7 +231,8 @@ connection.onopen = function(session) {
             students: students,
             instructors: instructors,
             state: state,
-            state_data: state_data
+            state_data: state_data,
+            chat_history: chat_history["global"]
         }
     })
 
@@ -309,6 +311,9 @@ connection.onopen = function(session) {
         session.publish("api:split_mode_enabled", [],
                         {rooms: rooms, students_in_rooms: students_rooms})
 
+        // erase all rooms' chat history
+        chat_history = {global: chat_history["global"]}
+
         return state
     })
 
@@ -383,6 +388,18 @@ connection.onopen = function(session) {
     if (PING === true) {
         ping_interval = setInterval(ping_fnc, PING_TIMEOUT * 1000, session)
     }
+
+    session.subscribe("api:chat_message", function(args, kwargs, details) {
+        var user = kwargs["user_id"]
+        var msg = kwargs["message"]
+        var time = new Date()
+        var room = kwargs["room"] || "global"
+
+        if (!chat_history.hasOwnProperty(room)) {
+            chat_history[room] = []
+        }
+        chat_history[room].push({user_id: user, message: msg, timestamp: time})
+    })
 }
 
 var ping_fnc = function(session) {
