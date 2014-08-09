@@ -232,7 +232,7 @@ GUI.GUI = function() {
         var src = URL.createObjectURL(stream)
         // 2. add the video somewhere
         add_video_element("#remote_streams", "video_" + call.peer,
-                          "remote-stream medium-size video-thumbnail", src,
+                          "remote-stream small-size video-thumbnail", src,
                           false)
     }
 
