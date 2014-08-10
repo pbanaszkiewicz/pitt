@@ -1,0 +1,17 @@
+$(function() {
+    var student = new PITT.Pitt(false)
+    var gui = new GUI.GUI()
+    gui.init()
+    student.onUpdateState(gui.onStateChange)
+    student.onUpdateUserId(gui.onUpdateUserId)
+    student.onUpdateStudents(gui.onUpdateStudents)
+    student.onUpdateInstructors(gui.onUpdateInstructors)
+    student.onIncomingCall(gui.onIncomingCall)
+    student.onDroppedCall(gui.onDroppedCall)
+    student.onUpdateStudentsInRoom(gui.onUpdateStudentsInRoom)
+    student.onUpdateCountdown(gui.onUpdateCountdown)
+    student.onNewChatMessage(gui.onNewChatMessage)
+
+    student.init(gui.media_access, gui.media_error)
+    gui.onSendMessage(student.send_message)
+})

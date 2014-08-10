@@ -402,6 +402,13 @@ connection.onopen = function(session) {
     })
 }
 
+connection.onclose = function(reason, details) {
+    if (reason == "unreachable") {
+        console.error("Can't open Autobahn connection, retrying in 1s...")
+        setTimeout(connection.open, 1000)
+    }
+}
+
 var ping_fnc = function(session) {
     // only if we have opened the session AND we have some peers connected
     if (session.isOpen) {
@@ -453,4 +460,7 @@ var ping_fnc = function(session) {
 }
 
 console.log("Server listening on http://localhost:9001/")
-connection.open()
+// wait 2 seconds before attempting to connect to Autobahn
+setTimeout(function() {
+    connection.open()
+}, 2000)
