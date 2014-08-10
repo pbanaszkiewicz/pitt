@@ -57,7 +57,7 @@ Following documents contain information about application structure and travelli
 History
 -------
 
-v0.5 (2014-08-10)
+v0.5.0 (2014-08-10)
   Better interface for both desktops and tablets, but not for phones.  Very
   basic chat.  Task automation and generally slimmer front-end code.
   Voice-only connections improvements.  Improved installation docs a little
