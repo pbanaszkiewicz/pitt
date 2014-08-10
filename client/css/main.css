@@ -16,6 +16,7 @@
 .video-thumbnail {cursor: pointer;}
 
 .original-size {width: 640px; height: 480px;}
+.original-size.local-stream {border: none;}
 /* additional 6px to account for double 3px border */
 .medium-size   {width: 326px; height: 246px;}
 .small-size    {width: 166px; height: 126px;}
