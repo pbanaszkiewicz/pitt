@@ -67,6 +67,13 @@ PITT.Pitt = function(is_instructor) {
                 state = result.state
                 state_data = result.state_data
 
+                // update chat
+                var chat_history = result.chat_history
+                for (var i = 0; i < chat_history.length; i++) {
+                    var chat = chat_history[i]
+                    newChatMessage(chat.user_id, chat.message, chat.timestamp)
+                };
+
                 updateStudents(students)
                 updateInstructors(instructors)
                 updateState(state, state_data)
@@ -84,7 +91,8 @@ PITT.Pitt = function(is_instructor) {
                     // the server has given a room to join, so let's ask the
                     // peers in that room to call us
                     var join_room = state_data["join_room"]
-                    console.log("Asking peers in the room to call me")
+                    console.log("Asking peers in the room " + join_room +
+                                " to call me")
 
                     session.publish("api:call_me_" + join_room, [user_id,
                                     join_room])
@@ -133,6 +141,8 @@ PITT.Pitt = function(is_instructor) {
         session.subscribe("api:counting_down", on_counting_down)
 
         session.subscribe("api:ping", on_ping)
+
+        session.subscribe("api:chat_message", on_chat_message)
     }
     wamp.onclose = function(reason, details) {
         console.error("WAMP connection ERROR!", reason, details)
@@ -191,8 +201,9 @@ PITT.Pitt = function(is_instructor) {
 
     on_state_change = function(args, kwargs, details) {
         console.log("Event: on_state_change")
-        state = args[0]
         state_data = kwargs
+        state_data["previous_state"] = state
+        state = args[0]
         updateState(state, state_data)
     }
 
@@ -316,6 +327,21 @@ PITT.Pitt = function(is_instructor) {
         console.log("Ponged back")
     }
 
+    on_chat_message = function(args, kwargs, details) {
+        var author = kwargs["user_id"]
+        var message = kwargs["message"]
+        var room = kwargs["room"]
+        timestamp = new Date()
+
+        // only accept messages from within the room (while in SMALL GROUP
+        // mode).
+        // TODO: use filtering to send messages to only room participants
+        if (room == "global" || room == room_id) {
+            console.log("New message from:", author)
+            newChatMessage(author, message, timestamp)
+        }
+    }
+
     /***************
     PUBLIC INTERFACE
     ***************/
@@ -341,17 +367,9 @@ PITT.Pitt = function(is_instructor) {
                     host: "/",  // the same as window.location.hostname
                     port: 9000,
                     debug: DEBUG || 2,
-                    config: {"iceServers": [
-                        // our very own rfc5766 STUN&TURN server
-                        {
-                            url: "turn:patchculture.org:3478",
-                            username: "peer",
-                            credential: "peerinstruction"
-                        },
-                        {
-                            url: "stun:stun.l.google.com:19302"
-                        }
-                    ]}
+                    config: {
+                        "iceServers": ICE_SERVERS  // defined in globals.js
+                    }
                 })
 
                 connect_peer()
@@ -468,6 +486,7 @@ PITT.Pitt = function(is_instructor) {
             }
         )
     }
+
     var stop_broadcast = function() {
         // 1. disconnect all connected peers
         var calls_to_close = Object.keys(active_calls)
@@ -543,6 +562,15 @@ PITT.Pitt = function(is_instructor) {
         )
     }
 
+    var send_message = function(message) {
+        var data = {user_id: user_id, message: message}
+        if (room_id !== undefined) {
+            data["room"] = room_id
+        }
+
+        wamp.session.publish("api:chat_message", [], data, {exclude_me: false})
+    }
+
     var updateUserId = function(id) {}
     var updateStudents = function(students) {}
     var updateInstructors = function(instructors) {}
@@ -551,6 +579,7 @@ PITT.Pitt = function(is_instructor) {
     var droppedCall = function(peer_id, reason) {}
     var updateStudentsInRoom = function(students) {}
     var updateCountdown = function(t) {}
+    var newChatMessage = function(u, m, t) {}
 
     INTERFACE.init = init
     // INTERFACE.connect_peer = connect_peer
@@ -566,6 +595,7 @@ PITT.Pitt = function(is_instructor) {
     INTERFACE.onDroppedCall = function(_c) {droppedCall = _c}
     INTERFACE.onUpdateStudentsInRoom = function(_c) {updateStudentsInRoom = _c}
     INTERFACE.onUpdateCountdown = function(_c) {updateCountdown = _c}
+    INTERFACE.onNewChatMessage = function(_c) {newChatMessage = _c}
 
     INTERFACE.start_broadcast = start_broadcast
     INTERFACE.stop_broadcast = stop_broadcast
@@ -573,6 +603,7 @@ PITT.Pitt = function(is_instructor) {
     INTERFACE.start_split_mode = start_split_mode
     INTERFACE.stop_split_mode = stop_split_mode
     INTERFACE.countdown = countdown
+    INTERFACE.send_message = send_message
 
     return INTERFACE
 }

@@ -21,3 +21,15 @@ navigator.getUserMedia = navigator.getUserMedia ||
 // just as simple hack to remove unnecessary prefixes from Audio API
 window.AudioContext = window.AudioContext ||
                       window.webkitAudioContext
+
+var ICE_SERVERS = [
+    // rfc5766 STUN&TURN server
+    {
+        url: "turn:patchculture.org:3478",
+        username: "peer",
+        credential: "peerinstruction"
+    },
+    {
+        url: "stun:stun.l.google.com:19302"
+    }
+]

@@ -33,53 +33,58 @@ switch from broadcasting to small-group-discussions mode and back.
 Installation
 ------------
 
-Get the source code from here: https://github.com/pbanaszkiewicz/pitt.
+Please follow the official
+`installation docs <https://github.com/pbanaszkiewicz/pitt/blob/develop/INSTALLATION.rst>`__.
 
-To install Pitt you need 2 components: `Crossbar <http://crossbar.io/>`_ and
-`NodeJS <http://nodejs.org/>`_.
+Short version::
 
-First install Crossbar (globally or in a local Python virtual environment)::
+    sudo aptitude install nodejs
+    sudo npm install -g grunt-cli
+    sudo pip install crossbar
 
-    $ sudo pip install crossbar
-
-Then `install NodeJS <http://nodejs.org/download/>`__ (you may as well install
-it from your distribution's repository).
-
-Finally, install required dependencies::
-
-    $ cd pitt
-    $ npm install
-
-If you need more details about installation, please follow the official
-`docs <https://github.com/pbanaszkiewicz/pitt/blob/develop/INSTALLATION.rst>`_.
+    git clone https://github.com/pbanaszkiewicz/pitt.git
+    cd pitt
+    npm install
+    grunt dev
 
 Documentation
 -------------
 
+Following documents contain information about application structure and travelling signals:
+
+* `STRUCTURE.rst <https://github.com/pbanaszkiewicz/pitt/blob/develop/STRUCTURE.rst>`__
+
 History
 -------
 
-v0.1 (2014-06-15)
-  First buggy release.
+v0.5 (2014-08-10)
+  Better interface for both desktops and tablets, but not for phones.  Very
+  basic chat.  Task automation and generally slimmer front-end code.
+  Voice-only connections improvements.  Improved installation docs a little
+  bit.  Changed this section ordering (newest first).
 
-v0.2 (lost in time)
-  Reworked architecture, quick mode-switching.
-
-v0.3 (lost in time)
-  ...?
-
-v0.3.1 (2014-06-29)
-  Added license (MIT), better ``package.json``, countdown before switching
-  from small group discussions, variable room size, removed echo sound on local
-  streams.
+v0.4.1 (2014-07-26)
+  Added docs (installation, contributing, authors/contributors, application
+  structure and signalling).  Turned beep volume down.  Dropped "_pubsub" from
+  directories and one file names.  Forced "640px by something" resolution --
+  not every browser lets use 640x480, so Pitt forces only width, and height
+  should be set automatically.
 
 v0.4 (2014-07-21)
   Reworked everything to leverage JavaScript patterns, fixed (hopefully!)
   signalling within application, turned on TURN server, refreshed the interface
   (thanks to Bootstrap).
 
-v0.4.1 (...)
-  Added documentation.
+v0.3.1 (2014-06-29)
+  Added license (MIT), better ``package.json``, countdown before switching
+  from small group discussions, variable room size, removed echo sound on local
+  streams.
 
-v0.5 (...)
-  Nothing yet.
+v0.3 (lost in time)
+  ...?
+
+v0.2 (lost in time)
+  Reworked architecture, quick mode-switching.
+
+v0.1 (2014-06-15)
+  First buggy release.
